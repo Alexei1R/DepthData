@@ -1,0 +1,4 @@
+git_url("git@gitlab.com:arpalus/app/ios-certificates.git")
+storage_mode("git")
+app_identifier(["com.arpalus.sampleApp"])
+type("appstore")

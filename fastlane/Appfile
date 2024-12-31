@@ -1,0 +1,5 @@
+app_identifier("com.arpalus.sampleApp") # The bundle identifier of your app
+apple_id("victor@thenoughtyfox.com") # Your Apple Developer Portal username
+
+itc_team_id("120036940") # App Store Connect Team ID
+team_id("26L6JBG5AC") # Developer Portal Team ID
