@@ -6,8 +6,45 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4212C7292D30075F00072660 /* ARPalusSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4212C7232D30075F00072660 /* ARPalusSDK.framework */; };
+		4212C72A2D30075F00072660 /* ARPalusSDK.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4212C7232D30075F00072660 /* ARPalusSDK.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4212C7972D355B0800072660 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C7962D355B0800072660 /* FirebaseAuth */; };
+		4212C7992D355B0800072660 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C7982D355B0800072660 /* FirebaseCore */; };
+		4212C79B2D355B0800072660 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C79A2D355B0800072660 /* FirebaseCrashlytics */; };
+		4212C79D2D355B0800072660 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C79C2D355B0800072660 /* FirebaseFirestore */; };
+		4212C79F2D355B0800072660 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C79E2D355B0800072660 /* FirebaseStorage */; };
+		4212C7A22D355B2000072660 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C7A12D355B2000072660 /* FirebaseCore */; };
+		4212C7A82D35646700072660 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C7A72D35646700072660 /* FirebaseAuth */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4212C7272D30075F00072660 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4212C6782D23F82300072660 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4212C7222D30075F00072660;
+			remoteInfo = ARPalusSDK;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4212C72F2D30075F00072660 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4212C72A2D30075F00072660 /* ARPalusSDK.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		4212C6802D23F82300072660 /* ArpalusSample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArpalusSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4212C7232D30075F00072660 /* ARPalusSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ARPalusSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -17,6 +54,13 @@
 				Info.plist,
 			);
 			target = 4212C67F2D23F82300072660 /* ArpalusSample */;
+		};
+		4212C72E2D30075F00072660 /* Exceptions for "ARPalusSDK" folder in "ARPalusSDK" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			publicHeaders = (
+				ARPalusSDK.h,
+			);
+			target = 4212C7222D30075F00072660 /* ARPalusSDK */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -29,6 +73,14 @@
 			path = ArpalusSample;
 			sourceTree = "<group>";
 		};
+		4212C7242D30075F00072660 /* ARPalusSDK */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4212C72E2D30075F00072660 /* Exceptions for "ARPalusSDK" folder in "ARPalusSDK" target */,
+			);
+			path = ARPalusSDK;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +88,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4212C7292D30075F00072660 /* ARPalusSDK.framework in Frameworks */,
+				4212C79B2D355B0800072660 /* FirebaseCrashlytics in Frameworks */,
+				4212C7992D355B0800072660 /* FirebaseCore in Frameworks */,
+				4212C7972D355B0800072660 /* FirebaseAuth in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4212C7202D30075F00072660 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4212C79D2D355B0800072660 /* FirebaseFirestore in Frameworks */,
+				4212C7A22D355B2000072660 /* FirebaseCore in Frameworks */,
+				4212C79F2D355B0800072660 /* FirebaseStorage in Frameworks */,
+				4212C7A82D35646700072660 /* FirebaseAuth in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +113,8 @@
 			isa = PBXGroup;
 			children = (
 				4212C6822D23F82300072660 /* ArpalusSample */,
+				4212C7242D30075F00072660 /* ARPalusSDK */,
+				4212C7A02D355B2000072660 /* Frameworks */,
 				4212C6812D23F82300072660 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,11 +123,29 @@
 			isa = PBXGroup;
 			children = (
 				4212C6802D23F82300072660 /* ArpalusSample.app */,
+				4212C7232D30075F00072660 /* ARPalusSDK.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4212C7A02D355B2000072660 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		4212C71E2D30075F00072660 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		4212C67F2D23F82300072660 /* ArpalusSample */ = {
@@ -68,20 +155,52 @@
 				4212C67C2D23F82300072660 /* Sources */,
 				4212C67D2D23F82300072660 /* Frameworks */,
 				4212C67E2D23F82300072660 /* Resources */,
+				4212C72F2D30075F00072660 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				4212C7282D30075F00072660 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4212C6822D23F82300072660 /* ArpalusSample */,
 			);
 			name = ArpalusSample;
 			packageProductDependencies = (
+				4212C7962D355B0800072660 /* FirebaseAuth */,
+				4212C7982D355B0800072660 /* FirebaseCore */,
+				4212C79A2D355B0800072660 /* FirebaseCrashlytics */,
 			);
 			productName = ArpalusSample;
 			productReference = 4212C6802D23F82300072660 /* ArpalusSample.app */;
 			productType = "com.apple.product-type.application";
+		};
+		4212C7222D30075F00072660 /* ARPalusSDK */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4212C72B2D30075F00072660 /* Build configuration list for PBXNativeTarget "ARPalusSDK" */;
+			buildPhases = (
+				4212C71E2D30075F00072660 /* Headers */,
+				4212C71F2D30075F00072660 /* Sources */,
+				4212C7202D30075F00072660 /* Frameworks */,
+				4212C7212D30075F00072660 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4212C7242D30075F00072660 /* ARPalusSDK */,
+			);
+			name = ARPalusSDK;
+			packageProductDependencies = (
+				4212C79C2D355B0800072660 /* FirebaseFirestore */,
+				4212C79E2D355B0800072660 /* FirebaseStorage */,
+				4212C7A12D355B2000072660 /* FirebaseCore */,
+				4212C7A72D35646700072660 /* FirebaseAuth */,
+			);
+			productName = ARPalusSDK;
+			productReference = 4212C7232D30075F00072660 /* ARPalusSDK.framework */;
+			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -96,6 +215,10 @@
 					4212C67F2D23F82300072660 = {
 						CreatedOnToolsVersion = 16.1;
 					};
+					4212C7222D30075F00072660 = {
+						CreatedOnToolsVersion = 16.1;
+						LastSwiftMigration = 1610;
+					};
 				};
 			};
 			buildConfigurationList = 4212C67B2D23F82300072660 /* Build configuration list for PBXProject "ArpalusSample" */;
@@ -107,18 +230,29 @@
 			);
 			mainGroup = 4212C6772D23F82300072660;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4212C6812D23F82300072660 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				4212C67F2D23F82300072660 /* ArpalusSample */,
+				4212C7222D30075F00072660 /* ARPalusSDK */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		4212C67E2D23F82300072660 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4212C7212D30075F00072660 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +269,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4212C71F2D30075F00072660 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4212C7282D30075F00072660 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4212C7222D30075F00072660 /* ARPalusSDK */;
+			targetProxy = 4212C7272D30075F00072660 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4212C6942D23F82500072660 /* Debug */ = {
@@ -323,6 +472,93 @@
 			};
 			name = Release;
 		};
+		4212C72C2D30075F00072660 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = 26L6JBG5AC;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = com.arpalus.ARPalusSDK;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		4212C72D2D30075F00072660 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = 26L6JBG5AC;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = com.arpalus.ARPalusSDK;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -344,7 +580,65 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		4212C72B2D30075F00072660 /* Build configuration list for PBXNativeTarget "ARPalusSDK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4212C72C2D30075F00072660 /* Debug */,
+				4212C72D2D30075F00072660 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4212C7962D355B0800072660 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		4212C7982D355B0800072660 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		4212C79A2D355B0800072660 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		4212C79C2D355B0800072660 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		4212C79E2D355B0800072660 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+		4212C7A12D355B2000072660 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		4212C7A72D35646700072660 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4212C7952D355B0800072660 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4212C6782D23F82300072660 /* Project object */;
 }
