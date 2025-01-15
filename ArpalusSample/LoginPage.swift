@@ -2,7 +2,8 @@ import Foundation
 import UIKit
 import SwiftUI
 import FirebaseAuth
-
+import FirebaseFirestore
+import ARPalusSDK
 
 final class UserStore {
     func signIn(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
@@ -12,6 +13,9 @@ final class UserStore {
             } else {
                 completion(.success(()))
             }
+
+
+            ArpalusSDK.start(email: email, password: password)
         }
     }
 
@@ -21,6 +25,10 @@ final class UserStore {
                 completion(.failure(error))
             } else {
                 completion(.success(()))
+            }
+
+            if let token = result?.credential?.idToken {
+                print(token)
             }
         }
     }
@@ -36,11 +44,18 @@ struct LoginPage: View {
     @State var password: String = ""
     @State var mode: Mode = .signIn
 
+    var onSignIn: () -> Void
+
     var body: some View {
-        VStack {
-            TextField("Email", text: $email)
-            TextField("Password", text: $password)
+        VStack() {
             Spacer()
+            VStack(alignment: .leading) {
+                TextField("Email", text: $email)
+                Divider()
+                TextField("Password", text: $password)
+                Divider()
+            }
+            .foregroundStyle(.black)
             Button(action: {
                 switch mode {
                 case .signIn:
@@ -48,6 +63,7 @@ struct LoginPage: View {
                         switch result {
                         case .success:
                             print("Sign in successful")
+                            onSignIn()
                         case .failure(let error):
                             print("Sign in failed: \(error)")
                         }
@@ -57,22 +73,33 @@ struct LoginPage: View {
                         switch result {
                         case .success:
                             print("Sign up successful")
+                            onSignIn()
                         case .failure(let error):
                             print("Sign up failed: \(error)")
                         }
                     }
                 }
             }) {
-                if mode == .signIn {
-                    Text("Sign Up")
-                } else {
-                    Text("Sign In")
+                HStack {
+                    if mode == .signIn {
+                        Text("Sign In")
+                    } else {
+                        Text("Sign Up")
+                    }
                 }
+                .padding(.vertical)
+                .frame(maxWidth: .infinity)
+                .foregroundStyle(.white)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .foregroundStyle(.blue)
+                )
             }
+            Spacer()
         }
+        .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black)
-        .foregroundColor(Color.white)
+        .background(Color.white)
     }
 }
 
