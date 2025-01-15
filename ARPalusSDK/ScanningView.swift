@@ -73,3 +73,25 @@ extension ScanningView: ARSessionDelegate {
         })
     }
 }
+
+public class ScanningViewController: UIViewController {
+
+    private var scanningView: ScanningView!
+
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+
+        scanningView = ScanningView(frame: view.bounds)
+        scanningView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(scanningView)
+        scanningView.setupUI()
+    }
+
+    public override func viewWillAppear(_ animated: Bool) {
+        scanningView.arSceneView.session.run(ARWorldTrackingConfiguration())
+    }
+
+    public override func viewWillDisappear(_ animated: Bool) {
+        scanningView.arSceneView.session.pause()
+    }
+}
