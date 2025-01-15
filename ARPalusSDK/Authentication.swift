@@ -10,9 +10,8 @@ extension Auth {
 }
 
 final class Authentication {
-    func authenticate(token: String) {
-        Auth.sdk.signIn(withCustomToken: token) { result, error in
-            
-        }
+    func authenticate(email: String, password: String) async throws -> AuthDataResult {
+        let result = try await Auth.sdk.signIn(withEmail: email, password: password)
+        return result
     }
 }
