@@ -21,6 +21,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     private var placedPositions: Set<SIMD2<Float>> = []
     
+    private let nearClip: Float = 0.01  // 1cm
+    private let farClip: Float = 5.0    // 5m
+    private var visibleNodes: [SIMD2<Float>: SCNNode] = [:]
+    
     deinit {
         print("")
     }
@@ -149,54 +153,184 @@ extension ViewController: ARSessionDelegate {
             }
             return
         }
+
+        // Get camera properties
+        let camera = frame.camera
+        let cameraTransform = camera.transform
+        let cameraPos = simd_float3(cameraTransform.columns.3.x, 
+                                   cameraTransform.columns.3.y, 
+                                   cameraTransform.columns.3.z)
         
-        // Get current camera position
-        let currentPos = frame.camera.transform.columns.3
-        
-        // Calculate separate grid spacing for X and Y based on their respective dimensions
-        let gridSpacingX = PLANE_SIZE.x * OVERLAP_VALUE
-        let gridSpacingY = PLANE_SIZE.y * OVERLAP_VALUE
-        
-        // Calculate the closest grid position
-        let relativeX = currentPos.x - origin.columns.3.x
-        let relativeY = currentPos.y - origin.columns.3.y
-        
-        let centerX = round(relativeX / gridSpacingX) * gridSpacingX
-        let centerY = round(relativeY / gridSpacingY) * gridSpacingY
-        
-        // Calculate target position
-        let targetX = origin.columns.3.x + centerX
-        let targetY = origin.columns.3.y + centerY
-        
-        let gridPosition = float2(targetX, targetY)
-        
-        // Define position tolerance
-        let tolerance: Float = 0.001
-        
-        // Check if a plane already exists at this position
-        let exists = placedPositions.contains { existingPos in
-            abs(existingPos.x - gridPosition.x) < tolerance &&
-            abs(existingPos.y - gridPosition.y) < tolerance
-        }
-        
-        // Only place a new plane if one doesn't exist at this position
-        if !exists {
-            var newTransform = origin
-            newTransform.columns.3 = simd_float4(
-                targetX,
-                targetY,
-                origin.columns.3.z,
-                1
-            )
+        // Calculate camera orientation vectors
+        let forward = -simd_normalize(simd_float3(cameraTransform.columns.2.x,
+                                                cameraTransform.columns.2.y,
+                                                cameraTransform.columns.2.z))
+        let right = simd_normalize(simd_float3(cameraTransform.columns.0.x,
+                                             cameraTransform.columns.0.y,
+                                             cameraTransform.columns.0.z))
+        let up = simd_normalize(simd_float3(cameraTransform.columns.1.x,
+                                          cameraTransform.columns.1.y,
+                                          cameraTransform.columns.1.z))
+
+        // Get actual camera FOV
+        let fov = camera.fov
+        let horizontalFOV = fov.x
+        let verticalFOV = fov.y
+
+        // Calculate frustum corners at different distances
+        let distances: [Float] = [nearClip, farClip/2, farClip]
+        var gridPositionsToCheck: Set<SIMD2<Float>> = []
+
+        for distance in distances {
+            // Calculate frustum dimensions at this distance
+            let frustumHeight = 2.0 * distance * tan(verticalFOV / 2.0)
+            let frustumWidth = 2.0 * distance * tan(horizontalFOV / 2.0)
             
-            drawPlane(transform: newTransform, color: .red)
-            placedPositions.insert(gridPosition)
+            // Calculate frustum corners in camera space
+            let corners: [simd_float3] = [
+                // Top-left
+                cameraPos + forward * distance - right * (frustumWidth/2) + up * (frustumHeight/2),
+                // Top-right
+                cameraPos + forward * distance + right * (frustumWidth/2) + up * (frustumHeight/2),
+                // Bottom-left
+                cameraPos + forward * distance - right * (frustumWidth/2) - up * (frustumHeight/2),
+                // Bottom-right
+                cameraPos + forward * distance + right * (frustumWidth/2) - up * (frustumHeight/2)
+            ]
+
+            // Calculate grid positions that could fit within these corners
+            let gridSpacingX = PLANE_SIZE.x * OVERLAP_VALUE
+            let gridSpacingY = PLANE_SIZE.y * OVERLAP_VALUE
+
+            // Find bounds of the grid area
+            let minX = corners.map { $0.x }.min()! - gridSpacingX
+            let maxX = corners.map { $0.x }.max()! + gridSpacingX
+            let minY = corners.map { $0.y }.min()! - gridSpacingY
+            let maxY = corners.map { $0.y }.max()! + gridSpacingY
+
+            // Round to nearest grid positions
+            let startX = round(minX / gridSpacingX) * gridSpacingX
+            let endX = round(maxX / gridSpacingX) * gridSpacingX
+            let startY = round(minY / gridSpacingY) * gridSpacingY
+            let endY = round(maxY / gridSpacingY) * gridSpacingY
+
+            // Add potential grid positions
+            var x = startX
+            while x <= endX {
+                var y = startY
+                while y <= endY {
+                    let gridPosition = SIMD2<Float>(x, y)
+                    gridPositionsToCheck.insert(gridPosition)
+                    y += gridSpacingY
+                }
+                x += gridSpacingX
+            }
+        }
+
+        // Check each potential grid position
+        for gridPosition in gridPositionsToCheck {
+            // Skip if already placed
+            if placedPositions.contains(gridPosition) {
+                continue
+            }
+
+            // Calculate world position
+            let worldPos = simd_float3(gridPosition.x, gridPosition.y, origin.columns.3.z)
+            let toGrid = worldPos - cameraPos
+
+            // Check if in front of camera
+            let distanceToPlane = simd_dot(toGrid, forward)
+            if distanceToPlane <= 0 || distanceToPlane > farClip {
+                continue
+            }
+
+            // Project onto camera plane
+            let rightOffset = simd_dot(toGrid, right)
+            let upOffset = simd_dot(toGrid, up)
+
+            // Calculate frustum dimensions at this distance
+            let frustumWidth = 2.0 * distanceToPlane * tan(horizontalFOV / 2.0)
+            let frustumHeight = 2.0 * distanceToPlane * tan(verticalFOV / 2.0)
+
+            // Check if within frustum
+            if abs(rightOffset) <= frustumWidth/2 && abs(upOffset) <= frustumHeight/2 {
+                var newTransform = origin
+                newTransform.columns.3 = simd_float4(gridPosition.x, gridPosition.y, origin.columns.3.z, 1)
+                
+                let node = createPlaneNode(color: .red)
+                node.simdTransform = newTransform
+                sceneView.scene.rootNode.addChildNode(node)
+                placedPositions.insert(gridPosition)
+                visibleNodes[gridPosition] = node
+            }
+        }
+    }
+    
+    private func createPlaneNode(color: UIColor) -> SCNNode {
+        let planeGeometry = SCNPlane(width: CGFloat(PLANE_SIZE.x),
+                                   height: CGFloat(PLANE_SIZE.y))
+        let planeMaterial = SCNMaterial()
+        planeMaterial.diffuse.contents = color
+        planeGeometry.materials = [planeMaterial]
+        return SCNNode(geometry: planeGeometry)
+    }
+    
+    private func updateVisiblePlanes(frame: ARFrame) {
+        let camera = frame.camera
+        let aspectRatio = Float(sceneView.bounds.width / sceneView.bounds.height)
+        let frustumDims = getFrustumDimensions(fov: camera.fov,
+                                             aspectRatio: aspectRatio,
+                                             nearClip: nearClip,
+                                             farClip: farClip)
+        
+        // Reset all nodes to red
+        for node in visibleNodes.values {
+            (node.geometry?.firstMaterial?.diffuse.contents as? UIColor) == .red
         }
         
+        // Calculate camera forward and right vectors
+        let cameraTransform = camera.transform
+        let forward = -simd_normalize(simd_float3(cameraTransform.columns.2.x,
+                                                cameraTransform.columns.2.y,
+                                                cameraTransform.columns.2.z))
+        let right = simd_normalize(simd_float3(cameraTransform.columns.0.x,
+                                             cameraTransform.columns.0.y,
+                                             cameraTransform.columns.0.z))
+        let up = simd_cross(forward, right)
         
-        
-        
-        //Now chech if a 
+        // Check each placed position
+        for position in placedPositions {
+            guard let node = visibleNodes[position] else { continue }
+            
+            // Get vector from camera to plane
+            let planePos = simd_float3(position.x, position.y, origin?.columns.3.z ?? 0)
+            let toPlane = planePos - simd_float3(cameraTransform.columns.3.x,
+                                               cameraTransform.columns.3.y,
+                                               cameraTransform.columns.3.z)
+            
+            // Check if plane is in front of camera
+            let distanceToPlane = simd_dot(toPlane, forward)
+            if distanceToPlane <= 0 { continue }
+            
+            // Project onto camera plane
+            let rightOffset = simd_dot(toPlane, right)
+            let upOffset = simd_dot(toPlane, up)
+            
+            // Calculate frustum dimensions at this distance
+            let frustumWidth = lerp(frustumDims.near.x, frustumDims.far.x,
+                                  fraction: (distanceToPlane - nearClip) / (farClip - nearClip))
+            let frustumHeight = lerp(frustumDims.near.y, frustumDims.far.y,
+                                   fraction: (distanceToPlane - nearClip) / (farClip - nearClip))
+            
+            // Check if within frustum
+            if abs(rightOffset) <= frustumWidth / 2 && abs(upOffset) <= frustumHeight / 2 {
+                node.geometry?.firstMaterial?.diffuse.contents = UIColor.green
+            }
+        }
+    }
+    
+    private func lerp(_ a: Float, _ b: Float, fraction: Float) -> Float {
+        return a + (b - a) * fraction
     }
 }
 
