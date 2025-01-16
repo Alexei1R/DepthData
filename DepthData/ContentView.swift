@@ -9,8 +9,7 @@ import SwiftUI
 import MetalKit
 import ARKit
 
-struct ArpausMain: View {
-    @StateObject private var arSession = ARSessionManager()
+struct ArpalusMain: View {
     @State private var distance: Float = 0
     
     var body: some View {
@@ -20,70 +19,22 @@ struct ArpausMain: View {
                     .padding()
                     .multilineTextAlignment(.center)
             } else {
-                MetalTextureView(texture: arSession.depthTexture, distance: $distance)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .onAppear {
-                        arSession.startSession()
-                    }
-                
-                // Crosshair
-                Crosshair()
-                
-                // Distance overlay
-                VStack {
-                    Spacer()
-                    Text(String(format: "Distance: %.2f meters", distance))
-                        .font(.title)
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.black.opacity(0.7))
-                        .cornerRadius(10)
-                        .padding(.bottom, 50)
-                }
+                ARView()
             }
         }
     }
 }
 
-#Preview {
-    ArpausMain()
+struct ARView: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> some UIViewController {
+        return ViewController()
+    }
+
+    func updateUIViewController(_ uiView: UIViewControllerType, context: Context) {
+
+    }
 }
 
-class ARSessionManager: NSObject, ObservableObject, ARSessionDelegate {
-    private let session = ARSession()
-    @Published var depthTexture: MTLTexture?
-    
-    override init() {
-        super.init()
-        session.delegate = self
-    }
-    
-    func startSession() {
-        guard ARWorldTrackingConfiguration.supportsFrameSemantics([.sceneDepth]) else {
-            print("Scene depth is not supported on this device")
-            return
-        }
-        
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.frameSemantics = .sceneDepth
-        
-        // Force portrait video format
-        if let videoFormat = ARWorldTrackingConfiguration.supportedVideoFormats
-            .first(where: { $0.imageResolution.height > $0.imageResolution.width }) {
-            configuration.videoFormat = videoFormat
-        }
-        
-        DispatchQueue.main.async {
-            self.session.run(configuration)
-        }
-    }
-    
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        guard let depthMap = frame.sceneDepth?.depthMap else { return }
-        
-        depthTexture = TextureCreator.createTexture(
-            from: depthMap,
-            device: MetalEnvironment.shared.device
-        )
-    }
+#Preview {
+    ArpalusMain()
 }

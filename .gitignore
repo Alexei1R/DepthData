@@ -1,0 +1,16 @@
+UserInterfaceState.xcuserstate
+WorkspaceSettings.xcsettings
+*xcuserdata/
+*.ipa
+Pods/
+*.pbxuser
+*.mode1v3
+.DS_Store
+*.tmp
+build
+xcuserdata
+timeline.xctimeline
+project.xcworkspace
+playground.xcworkspace
+
+#xcshareddata
