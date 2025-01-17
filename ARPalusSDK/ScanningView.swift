@@ -288,6 +288,7 @@ extension ScanningViewController: ARSessionDelegate {
     private func sendUploadImageEvent(frame: ARFrame) {
         let image = UIImage(ciImage: CIImage(cvPixelBuffer: frame.capturedImage))
         onEvent?(.saveImage(image, frame))
+        SDKEnvironment.shared.imageSevice.uploadImageToFirebase(image: image, arFrame: frame)
     }
 
     private func createPlaneNode(color: UIColor) -> SCNNode {
