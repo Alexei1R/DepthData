@@ -13,9 +13,6 @@ final class UserStore {
             } else {
                 completion(.success(()))
             }
-
-
-            ArpalusSDK.start(email: email, password: password)
         }
     }
 
@@ -44,7 +41,7 @@ struct LoginPage: View {
     @State var password: String = ""
     @State var mode: Mode = .signIn
 
-    var onSignIn: () -> Void
+    var onSignIn: (String, String) -> Void
 
     var body: some View {
         VStack() {
@@ -63,7 +60,7 @@ struct LoginPage: View {
                         switch result {
                         case .success:
                             print("Sign in successful")
-                            onSignIn()
+                            onSignIn(email, password)
                         case .failure(let error):
                             print("Sign in failed: \(error)")
                         }
@@ -73,7 +70,7 @@ struct LoginPage: View {
                         switch result {
                         case .success:
                             print("Sign up successful")
-                            onSignIn()
+                            onSignIn(email, password)
                         case .failure(let error):
                             print("Sign up failed: \(error)")
                         }

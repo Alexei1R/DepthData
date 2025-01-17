@@ -40,7 +40,7 @@ import ARPalusSDK
 //
 class ViewController: UIHostingController<LoginPage> {
     init() {
-        super.init(rootView: LoginPage(onSignIn: {}))
+        super.init(rootView: LoginPage(onSignIn: {_,_ in }))
         rootView = LoginPage(onSignIn: proceed)
     }
 
@@ -48,7 +48,9 @@ class ViewController: UIHostingController<LoginPage> {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func proceed() {
-        navigationController?.pushViewController(ScanningViewController(), animated: true)
+    func proceed(email: String, password: String) {
+        ArpalusSDK.start(email: email, password: password) {
+            self.navigationController?.pushViewController(ScanningViewController(), animated: true)
+        }
     }
 }
