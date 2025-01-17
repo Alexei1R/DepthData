@@ -3,13 +3,6 @@ import FirebaseFirestore
 import FirebaseAuth
 import FirebaseStorage
 
-
-
-
-
-
-
-
 enum SDKError: Error {
     case missingUserSettings
     case missingRemoteSettings
@@ -38,12 +31,14 @@ final class SettingsStore {
         return userSettings
     }
 
-    func getAppSettingsVersion() async throws -> AppSettingsVersion {
+    func getClientSettings() async throws -> ClientSettings {
         guard let userSettings = localStorage.userSettings else { throw SDKError.missingUserSettings }
-        let settings = try await db.collection("Settings").document("\(userSettings.client)_\(userSettings.settings)").getDocument(as: AppSettingsVersion.self)
+        let settings = try await db.collection("Settings")
+            .document("\(userSettings.client)_\(userSettings.settings)")
+            .getDocument(as: ClientSettings.self)
 
-        if localStorage.appSettings?.version != settings.version {
-            localStorage.appSettings = settings
+        if localStorage.clientSettings?.version != settings.version {
+            localStorage.clientSettings = settings
         }
 
         return settings
@@ -51,7 +46,7 @@ final class SettingsStore {
 
     func downloadAppSettings() async throws {
         guard let userSettings = localStorage.userSettings else { throw SDKError.missingUserSettings }
-        try await storage.reference(
+        let url = try await storage.reference(
             withPath: "\(userSettings.client)/Settings/\(userSettings.settings).settings"
         ).writeAsync(
             toFile: Disk(userId: userSettings.id).appSettingsURL,
@@ -59,6 +54,8 @@ final class SettingsStore {
 //                print("🔵", progress)
             }
         )
+        let data = try Data(contentsOf: url)
+        localStorage.appSettings = try JSONDecoder().decode(AppSettings.self, from: data)
     }
 
     func getDeployments() async throws {

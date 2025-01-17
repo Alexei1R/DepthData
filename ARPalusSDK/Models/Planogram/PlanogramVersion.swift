@@ -1,6 +1,6 @@
 import Foundation
 
-struct Planogram: Codable, Equatable {
+struct PlanogramVersion: Codable, Equatable {
     var planogramName: String
     var version: Int
     var index: Int

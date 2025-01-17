@@ -14,8 +14,11 @@ final class LocalStorage {
     @Defaults("com.arpalus.sdk.user.settings")
     var userSettings: UserSettings? = nil
 
+    @Defaults("com.arpalus.sdk.client.settings")
+    var clientSettings: ClientSettings? = nil
+
     @Defaults("com.arpalus.sdk.app.settings")
-    var appSettings: AppSettingsVersion? = nil
+    var appSettings: AppSettings? = nil
 
     @Defaults("com.arpalus.sdk.deployments.settings")
     var deploymentSettings: Deployment? = nil

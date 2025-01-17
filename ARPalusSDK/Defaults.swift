@@ -16,7 +16,7 @@ public struct Defaults<T: Codable> where T: Equatable {
             guard let data = UserDefaults.standard.data(forKey: key) else { return defaultValue }
             do {
                 let item = try JSONDecoder().decode(T.self, from: data)
-            return item
+                return item
             } catch {
                 return defaultValue
             }
