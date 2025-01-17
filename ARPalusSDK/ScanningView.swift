@@ -71,6 +71,11 @@ extension ScanningView: ARSessionDelegate {
             node.position = .init(coords)
             arSceneView.scene.rootNode.addChildNode(node)
         })
+
+
+        let uiImage = UIImage(ciImage: image)
+
+        SDKEnvironment.shared.imageSevice.uploadImageToFirebase(image: uiImage, arFrame: frame)
     }
 }
 
