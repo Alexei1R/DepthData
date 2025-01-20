@@ -2,22 +2,7 @@ import Foundation
 import ARKit
 import SwiftUI
 
-enum SDK {
-    func initialize(token: String) {}
-}
-
-let CYLINDER_RADIUS = 0.03
 let OVERLAP_VALUE : Float = 1.1
-
-enum ScanningEvent {
-    enum CameraAngleError {
-        case pitch
-        case yaw
-        case roll
-    }
-    case saveImage(UIImage, ARFrame)
-    case captureAngle(CameraAngleError)
-}
 
 public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
@@ -26,8 +11,6 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
     var settings = SDKEnvironment.shared.localStorage.appSettings!
     lazy var calibrator = Calibrator(camera: settings.camera!, vision: settings.vision!)
-
-    var onEvent: ((ScanningEvent) -> Void)?
     var overlayViewModel: OverlayViewModel!
 
     private var placedPositions: Set<SIMD2<Float>> = []
@@ -89,16 +72,14 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         view.bringSubviewToFront(vc.view)
     }
 
-    private func drawPlane(transform: simd_float4x4, color: UIColor = .red) {
-        let planeGeometry = SCNPlane(
-            width: settings.camera!.shelfCoverageCellsSize,
-            height: settings.camera!.shelfCoverageCellsSize
-        )
-        let planeMaterial = SCNMaterial()
-        planeMaterial.diffuse.contents = color
-        planeGeometry.materials = [planeMaterial]
+    private func drawOrigin(transform: simd_float4x4) {
+        guard true /*settings.debug!.debugPlaneOrigin*/ else { return }
+        let sphere = SCNSphere(radius: 0.02)
+        let material = SCNMaterial()
+        material.diffuse.contents = UIColor.white
+        sphere.materials = [material]
 
-        let node = SCNNode(geometry: planeGeometry)
+        let node = SCNNode(geometry: sphere)
         node.simdTransform = transform
 
         sceneView.scene.rootNode.addChildNode(node)
@@ -120,11 +101,11 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         case .calibrated(let origin):
             overlayViewModel.isCalibrated = true
             self.origin = origin
-            drawPlane(transform: origin, color: .blue)
+            drawOrigin(transform: origin)
         }
     }
 
-    private func checkCameraAngle(frame: ARFrame) -> Bool {
+    private func isValidAngle(frame: ARFrame) -> Bool {
         guard let origin else {
             return false
         }
@@ -160,6 +141,19 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
         return true
     }
+
+    private func isValidDistance(_ distance: Double) -> Bool {
+        let isTooClose = distance < settings.vision!.minDetectionDistance || distance < settings.vision!.minStartingDistance
+        if isTooClose && settings.camera!.tooCloseToShelfWarning {
+            overlayViewModel.text = "Too Close to Shelf"
+            return false
+        }
+        if settings.camera!.tooFarToShelfWarning && distance > settings.vision!.maxDetectionDistance {
+            overlayViewModel.text = "Too Far to Shelf"
+            return false
+        }
+        return true
+    }
 }
 
 extension ScanningViewController: ARSessionDelegate {
@@ -173,9 +167,7 @@ extension ScanningViewController: ARSessionDelegate {
         let camera = frame.camera
         let cameraTransform = camera.transform
 
-        guard checkCameraAngle(frame: frame) else {
-            return
-        }
+        guard isValidAngle(frame: frame) else { return }
 
         // Get camera position and orientation vectors
         let cameraPos = cameraTransform.columns.3.xyz
@@ -189,7 +181,9 @@ extension ScanningViewController: ARSessionDelegate {
         // Since our plane is at z=0 in plane space, calculate intersection distance
         // using the similar triangles formed by the camera angle
         let distanceToPlane = abs(cameraInPlaneSpace.z / forwardInPlaneSpace.z)
-        
+
+        guard isValidDistance(Double(distanceToPlane)) else { return }
+
         // Calculate frustum dimensions at the intersection distance
         let fov = camera.fov
         let frustumHeight = 2.0 * distanceToPlane * tan(fov.y / 2.0)
@@ -269,7 +263,7 @@ extension ScanningViewController: ARSessionDelegate {
             sendUploadImageEvent(frame: frame)
 
             newCells.forEach { (gridPosition, transform) in
-                let node = createPlaneNode(color: .red)
+                let node = createPlaneNode(color: .white.withAlphaComponent(0.8))
                 node.simdTransform = transform
                 sceneView.scene.rootNode.addChildNode(node)
                 placedPositions.insert(gridPosition)
@@ -318,9 +312,19 @@ extension ScanningViewController: ARSessionDelegate {
     }
 
     private func sendUploadImageEvent(frame: ARFrame) {
-        let image = UIImage(ciImage: CIImage(cvPixelBuffer: frame.capturedImage))
-        onEvent?(.saveImage(image, frame))
+        let image = getScaledImage(buffer: frame.capturedImage)
         SDKEnvironment.shared.imageSevice.uploadImageToFirebase(image: image, arFrame: frame)
+    }
+
+    private func getScaledImage(buffer: CVPixelBuffer) -> UIImage {
+        CVPixelBufferLockBaseAddress(buffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
+        let image = CIImage(cvPixelBuffer: buffer).transformed(by: .init(rotationAngle: -.pi/2))
+        guard settings.camera!.lowerSaveResolution, Int(buffer.size.width) != settings.camera!.saveResolutionWidth else {
+            return UIImage(ciImage: image)
+        }
+        let scale = CGFloat(settings.camera!.saveResolutionWidth) / buffer.size.width
+        return UIImage(ciImage: image.transformed(by: .init(scaleX: scale, y: scale)))
     }
 
     private func createPlaneNode(color: UIColor) -> SCNNode {

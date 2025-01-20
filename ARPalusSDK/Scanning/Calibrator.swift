@@ -9,6 +9,8 @@ import ARKit
 
 typealias Degrees = Double
 
+let CYLINDER_RADIUS = 0.03
+
 final class Calibrator {
 
     enum Result: Equatable {
@@ -21,7 +23,7 @@ final class Calibrator {
     }
 
     private var stableFrameCount = 0
-    private let requiredStableFrames = 5
+    private let requiredStableFrames = 30
 
     let camera: AppSettings.Camera
     let vision: AppSettings.Vision
@@ -47,7 +49,6 @@ final class Calibrator {
             stableFrameCount = 0
             return .invalidRoll
         }
-        stableFrameCount += 1
 
         guard let (distance, origin) = computeOriginPoint(frame: frame) else {
             return .cannotComputeOrigin
@@ -56,6 +57,8 @@ final class Calibrator {
         if Double(distance) < vision.minStartingDistance {
             return .tooClose
         }
+
+        stableFrameCount += 1
 
         if stableFrameCount < requiredStableFrames {
             return .inProgress

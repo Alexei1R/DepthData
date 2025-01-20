@@ -98,8 +98,8 @@ extension AppSettings {
 //        let maxLoadedModels: Int
 //        let posterTracking: Bool
 //        let minDetectionAngle: Int
-//        let minDetectionDistance: Double
-//        let maxDetectionDistance: Double
+        let minDetectionDistance: Double
+        let maxDetectionDistance: Double
 //        let acceptFrontalSideDetections: Bool
 //        let maxProcessingDistanceX: Double
 //        let quadPosOffsetZ: Double
@@ -188,5 +188,7 @@ extension AppSettings.Vision {
         tags = try container.decode([String].self, forKey: .tags)
 
         minStartingDistance = try container.decodeIfPresent(Double.self, forKey: .minStartingDistance) ?? 0.5
+        minDetectionDistance = try container.decodeIfPresent(Double.self, forKey: .minDetectionDistance) ?? 0
+        maxDetectionDistance = try container.decodeIfPresent(Double.self, forKey: .maxDetectionDistance) ?? 2
     }
 }

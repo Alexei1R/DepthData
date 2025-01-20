@@ -49,9 +49,9 @@ extension AppSettings {
 //        let zoomCropFractions: [Double]
 //        let processSquareCrops: Bool
 //        let delayBetweenInstructions: Double
-//        let angleTooSteepWarning: Bool
-//        let tooCloseToShelfWarning: Bool
-//        let tooFarToShelfWarning: Bool
+        let angleTooSteepWarning: Bool
+        let tooCloseToShelfWarning: Bool
+        let tooFarToShelfWarning: Bool
 //        let motionSpeedWarning: Bool
 //        let maxMotionAccelerationSpeed: Double
 //        let maxMotionAngularAccelerationSpeed: Double
@@ -84,5 +84,9 @@ extension AppSettings.Camera {
         captureAnglePitch = try container.decodeIfPresent(Double.self, forKey: .captureAnglePitch) ?? 35
         captureAngleYaw = try container.decodeIfPresent(Double.self, forKey: .captureAngleYaw) ?? 35
         captureAngleRoll = try container.decodeIfPresent(Double.self, forKey: .captureAngleRoll) ?? 20
+
+        angleTooSteepWarning = try container.decodeIfPresent(Bool.self, forKey: .angleTooSteepWarning) ?? true
+        tooCloseToShelfWarning = try container.decodeIfPresent(Bool.self, forKey: .tooCloseToShelfWarning) ?? true
+        tooFarToShelfWarning = try container.decodeIfPresent(Bool.self, forKey: .tooFarToShelfWarning) ?? true
     }
 }
