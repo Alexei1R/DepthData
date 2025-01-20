@@ -27,6 +27,8 @@ final class Calibrator {
 
     let camera: AppSettings.Camera
     let vision: AppSettings.Vision
+    lazy var originCalculator: OriginCalculator = ARWorldTrackingConfiguration
+        .supportsFrameSemantics(.sceneDepth) && false ? DepthMapOriginCalculator() : FeaturePointsOriginCalculator(vision: vision)
 
     init(camera: AppSettings.Camera, vision: AppSettings.Vision) {
         self.camera = camera
@@ -50,9 +52,11 @@ final class Calibrator {
             return .invalidRoll
         }
 
-        guard let (distance, origin) = computeOriginPoint(frame: frame) else {
+        guard let origin = computeOriginPoint(frame: frame) else {
             return .cannotComputeOrigin
         }
+
+        let distance = simd_distance(frame.camera.transform.columns.3, origin.columns.3)
 
         if Double(distance) < vision.minStartingDistance {
             return .tooClose
@@ -83,65 +87,13 @@ final class Calibrator {
         return Degrees(abs(roll * 180 / .pi))
     }
 
-    private func computeOriginPoint(frame: ARFrame) -> (distance: Float32, origin: simd_float4x4)? {
-        guard let depthMap = frame.sceneDepth?.depthMap else { return nil }
-
-        let width = CVPixelBufferGetWidth(depthMap)
-        let height = CVPixelBufferGetHeight(depthMap)
-
-        // Calculate center point
-        let centerX = width / 2
-        let centerY = height / 2
-
-        // Lock the buffer for reading
-        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
-
-        // Get pointer to depth data
-        guard let baseAddress = CVPixelBufferGetBaseAddress(depthMap) else { return nil }
-        let buffer = baseAddress.assumingMemoryBound(to: Float32.self)
-
-        // Get depth value at center point (in meters)
-        let centerDepth = buffer.valueAt(x: centerX, y: centerY, rowWidth: width)
-
-        let fov = frame.camera.fov
-        let distanceX = tan(fov.x / 2) * centerDepth * 2
-        //        let distanceY = tan(fov.y / 2) * centerDepth * 2
-
-        let distancePerPixel = distanceX / Float(width)
-        //        let distanceYPerPixel = distanceY / Float(height)
-
-        let pixelsPerSide = Int(CYLINDER_RADIUS / Double(distancePerPixel))
-
-        var count = 0
-        var sum: Float32 = 0
-        for i in (centerX - pixelsPerSide)...(centerX + pixelsPerSide) {
-            for j in (centerY - pixelsPerSide)...(centerY + pixelsPerSide) {
-                let xDeltaPixels = centerX - i
-                let yDeltaPixels = centerY - j
-                let distance = sqrt(Double(xDeltaPixels * xDeltaPixels + yDeltaPixels * yDeltaPixels))
-                if distance > Double(pixelsPerSide) { break }
-                let depth = buffer.valueAt(x: i, y: j, rowWidth: width)
-                if depth.isNaN { break }
-                count += 1
-                sum += depth
-            }
-        }
-        let averageDistance = sum / Float32(count)
+    private func computeOriginPoint(frame: ARFrame) -> simd_float4x4? {
+        guard let originPosition = originCalculator.compute(frame) else { return nil }
         // Get the camera transform
-        var originPoint = frame.camera.transform
+        var newOrigin = frame.camera.transform
+        newOrigin.columns.3 = simd_float4(originPosition, 1)
 
-        // Move along the camera's forward direction (negative Z in camera space)
-        let forward = simd_float3(
-            -originPoint.columns.2.x,
-             -originPoint.columns.2.y,
-             -originPoint.columns.2.z
-        )
-
-        // Move from camera position along the forward vector
-        originPoint.columns.3 = originPoint.columns.3 + simd_float4(forward * averageDistance, 0)
-
-        return (centerDepth, originPoint)
+        return newOrigin
     }
 }
 

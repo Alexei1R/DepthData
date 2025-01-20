@@ -93,7 +93,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         case .invalidRoll:
             overlayViewModel.text = "Invalid roll"
         case .cannotComputeOrigin:
-            overlayViewModel.text = "Cannot compute origin"
+            break
         case .tooClose:
             overlayViewModel.text = "Move further"
         case .inProgress:
@@ -263,7 +263,7 @@ extension ScanningViewController: ARSessionDelegate {
             sendUploadImageEvent(frame: frame)
 
             newCells.forEach { (gridPosition, transform) in
-                let node = createPlaneNode(color: .white.withAlphaComponent(0.8))
+                let node = createPlaneNode(color: .white)
                 node.simdTransform = transform
                 sceneView.scene.rootNode.addChildNode(node)
                 placedPositions.insert(gridPosition)
