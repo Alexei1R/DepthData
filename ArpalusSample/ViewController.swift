@@ -50,7 +50,10 @@ class ViewController: UIHostingController<LoginPage> {
 
     func proceed(email: String, password: String) {
         ArpalusSDK.start(email: email, password: password) {
-            self.navigationController?.pushViewController(ScanningViewController(), animated: true)
+            self.navigationController?.pushViewController(
+                ScanningViewController(),
+                animated: true
+            )
         }
     }
 }

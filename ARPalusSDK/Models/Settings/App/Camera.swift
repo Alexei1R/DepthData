@@ -10,9 +10,9 @@ extension AppSettings {
         let version: Int
         let systemName: AppSettingName
         let tags: [String]
-//        let captureAnglePitch: Double
-//        let captureAngleYaw: Double
-//        let captureAngleRoll: Double
+        let captureAnglePitch: Double
+        let captureAngleYaw: Double
+        let captureAngleRoll: Double
 //        let imageSaveMode: Int
 //        let newDetectionSaveImageThreshold: Int
 //        let minNumofImagesToUpload: Int
@@ -80,5 +80,9 @@ extension AppSettings.Camera {
         saveResolutionWidth = try container.decodeIfPresent(Int.self, forKey: .saveResolutionWidth) ?? 720
         preferredCameraConfigWidth = try container.decodeIfPresent(Int.self, forKey: .preferredCameraConfigWidth) ?? 720
         targetCameraAspectRatio = try container.decodeIfPresent(Double.self, forKey: .targetCameraAspectRatio) ?? 4.0 / 3
+
+        captureAnglePitch = try container.decodeIfPresent(Double.self, forKey: .captureAnglePitch) ?? 35
+        captureAngleYaw = try container.decodeIfPresent(Double.self, forKey: .captureAngleYaw) ?? 35
+        captureAngleRoll = try container.decodeIfPresent(Double.self, forKey: .captureAngleRoll) ?? 20
     }
 }

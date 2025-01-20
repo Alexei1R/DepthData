@@ -1,5 +1,6 @@
 import Foundation
 import ARKit
+import SwiftUI
 
 enum SDK {
     func initialize(token: String) {}
@@ -9,26 +10,30 @@ let CYLINDER_RADIUS = 0.03
 let OVERLAP_VALUE : Float = 1.1
 
 enum ScanningEvent {
+    enum CameraAngleError {
+        case pitch
+        case yaw
+        case roll
+    }
     case saveImage(UIImage, ARFrame)
-    case captureAngle
+    case captureAngle(CameraAngleError)
 }
 
 public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
     let sceneView = ARSCNView()
-
     var origin: simd_float4x4?
 
-    var settings = SDKEnvironment.shared.localStorage.appSettings
+    var settings = SDKEnvironment.shared.localStorage.appSettings!
+    lazy var calibrator = Calibrator(camera: settings.camera!, vision: settings.vision!)
 
     var onEvent: ((ScanningEvent) -> Void)?
+    var overlayViewModel: OverlayViewModel!
 
     private var placedPositions: Set<SIMD2<Float>> = []
 
-    private let nearClip: Float = 0.01  // 1cm
-    private let farClip: Float = 5.0    // 5m
     private var visibleNodes: [SIMD2<Float>: SCNNode] = [:]
-
+    
     public override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -39,8 +44,9 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
             view.bottomAnchor.constraint(equalTo: sceneView.bottomAnchor),
             view.trailingAnchor.constraint(equalTo: sceneView.trailingAnchor),
             view.leadingAnchor.constraint(equalTo: sceneView.leadingAnchor),
-
         ])
+
+        createOverlay()
 
         // Set the view's delegate
         sceneView.delegate = self
@@ -55,7 +61,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         configuration.worldAlignment = .gravity
         configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
         let bestFormat = CameraConfig.bestCameraConfig(
-            settings: settings!.camera!,
+            settings: settings.camera!,
             formats: ARWorldTrackingConfiguration.supportedVideoFormats
         )
         bestFormat.map { configuration.videoFormat = $0 }
@@ -63,71 +69,30 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         sceneView.session.run(configuration)
     }
 
-    private func computeOriginPoint(frame: ARFrame) -> simd_float4x4? {
-        guard let depthMap = frame.sceneDepth?.depthMap else { return nil }
+    private func createOverlay() {
+        overlayViewModel = OverlayViewModel()
+        let overlay = Overlay(viewModel: overlayViewModel)
 
-        let width = CVPixelBufferGetWidth(depthMap)
-        let height = CVPixelBufferGetHeight(depthMap)
-
-        // Calculate center point
-        let centerX = width / 2
-        let centerY = height / 2
-
-        // Lock the buffer for reading
-        CVPixelBufferLockBaseAddress(depthMap, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
-
-        // Get pointer to depth data
-        guard let baseAddress = CVPixelBufferGetBaseAddress(depthMap) else { return nil }
-        let buffer = baseAddress.assumingMemoryBound(to: Float32.self)
-
-        // Get depth value at center point (in meters)
-        let centerDepth = buffer.valueAt(x: centerX, y: centerY, rowWidth: width)
-
-        let fov = frame.camera.fov
-        let distanceX = tan(fov.x / 2) * centerDepth * 2
-        //        let distanceY = tan(fov.y / 2) * centerDepth * 2
-
-        let distancePerPixel = distanceX / Float(width)
-        //        let distanceYPerPixel = distanceY / Float(height)
-
-        let pixelsPerSide = Int(CYLINDER_RADIUS / Double(distancePerPixel))
-
-        var count = 0
-        var sum: Float32 = 0
-        for i in (centerX - pixelsPerSide)...(centerX + pixelsPerSide) {
-            for j in (centerY - pixelsPerSide)...(centerY + pixelsPerSide) {
-                let xDeltaPixels = centerX - i
-                let yDeltaPixels = centerY - j
-                let distance = sqrt(Double(xDeltaPixels * xDeltaPixels + yDeltaPixels * yDeltaPixels))
-                if distance > Double(pixelsPerSide) { break }
-                let depth = buffer.valueAt(x: i, y: j, rowWidth: width)
-                if depth.isNaN { break }
-                count += 1
-                sum += depth
-            }
-        }
-        let averageDistance = sum / Float32(count)
-        // Get the camera transform
-        var originPoint = frame.camera.transform
-
-        // Move along the camera's forward direction (negative Z in camera space)
-        let forward = simd_float3(
-            -originPoint.columns.2.x,
-             -originPoint.columns.2.y,
-             -originPoint.columns.2.z
-        )
-
-        // Move from camera position along the forward vector
-        originPoint.columns.3 = originPoint.columns.3 + simd_float4(forward * averageDistance, 0)
-
-        return originPoint
+        let vc = UIHostingController(rootView: overlay)
+        vc.willMove(toParent: self)
+        view.addSubview(vc.view)
+        vc.view.translatesAutoresizingMaskIntoConstraints = false
+        vc.view.backgroundColor = .clear
+        addChild(vc)
+        vc.didMove(toParent: self)
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: vc.view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor),
+            view.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor),
+            view.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor),
+        ])
+        view.bringSubviewToFront(vc.view)
     }
 
     private func drawPlane(transform: simd_float4x4, color: UIColor = .red) {
         let planeGeometry = SCNPlane(
-            width: settings!.camera!.shelfCoverageCellsSize,
-            height: settings!.camera!.shelfCoverageCellsSize
+            width: settings.camera!.shelfCoverageCellsSize,
+            height: settings.camera!.shelfCoverageCellsSize
         )
         let planeMaterial = SCNMaterial()
         planeMaterial.diffuse.contents = color
@@ -138,32 +103,80 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
         sceneView.scene.rootNode.addChildNode(node)
     }
-}
 
+    private func tryCalibrate(_ frame: ARFrame) {
+        let calibrationResult = calibrator.calibrateOrigin(frame: frame)
+        switch calibrationResult {
+        case .invalidPitch:
+            overlayViewModel.text = "Invalid pitch"
+        case .invalidRoll:
+            overlayViewModel.text = "Invalid roll"
+        case .cannotComputeOrigin:
+            overlayViewModel.text = "Cannot compute origin"
+        case .tooClose:
+            overlayViewModel.text = "Move further"
+        case .inProgress:
+            print("Calibrating")
+        case .calibrated(let origin):
+            overlayViewModel.isCalibrated = true
+            self.origin = origin
+            drawPlane(transform: origin, color: .blue)
+        }
+    }
 
-private func getFrustumDimensions(fov: simd_float2, aspectRatio: Float, nearClip: Float, farClip: Float) -> (near: simd_float2, far: simd_float2) {
-    let nearHeight = 2 * tan(fov.y / 2) * nearClip
-    let nearWidth = nearHeight * aspectRatio
-    let farHeight = 2 * tan(fov.y / 2) * farClip
-    let farWidth = farHeight * aspectRatio
-
-    return (near: simd_float2(nearWidth, nearHeight), far: simd_float2(farWidth, farHeight))
-}
-
-
-extension ScanningViewController: ARSessionDelegate {
-    public func session(_ session: ARSession, didUpdate frame: ARFrame) {
+    private func checkCameraAngle(frame: ARFrame) -> Bool {
         guard let origin else {
-            if let originPoint = computeOriginPoint(frame: frame) {
-                self.origin = originPoint
-                drawPlane(transform: originPoint, color: .blue)
-            }
-            return
+            return false
         }
 
         let camera = frame.camera
         let cameraTransform = camera.transform
-        
+
+        // Get camera orientation relative to origin
+        let relativeTransform = simd_inverse(origin) * cameraTransform
+        let eulerAngles = relativeTransform.eulerAngles
+
+        // Convert to degrees
+        let pitchDegrees = abs(eulerAngles.x * 180 / .pi)
+        let yawDegrees = abs(eulerAngles.y * 180 / .pi)
+        let rollDegrees = abs(eulerAngles.z * 180 / .pi)
+
+        print("Pitch: \(Int(pitchDegrees)); Yaw: \(Int(yawDegrees)); Roll: \(Int(rollDegrees))")
+
+        if Double(pitchDegrees) > settings.camera!.captureAnglePitch {
+            overlayViewModel.text = "Pitch to shelf"
+            return false
+        }
+
+        if Double(yawDegrees) > settings.camera!.captureAngleYaw {
+            overlayViewModel.text = "Yaw to shelf"
+            return false
+        }
+
+        if Double(rollDegrees) > settings.camera!.captureAngleRoll {
+            overlayViewModel.text = "Roll to shelf"
+            return false
+        }
+
+        return true
+    }
+}
+
+extension ScanningViewController: ARSessionDelegate {
+    public func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        overlayViewModel.text = nil
+        guard let origin else {
+            return tryCalibrate(frame)
+        }
+        guard overlayViewModel.isScanning else { return }
+
+        let camera = frame.camera
+        let cameraTransform = camera.transform
+
+        guard checkCameraAngle(frame: frame) else {
+            return
+        }
+
         // Get camera position and orientation vectors
         let cameraPos = cameraTransform.columns.3.xyz
         let forward = -simd_normalize(cameraTransform.columns.2.xyz)
@@ -205,8 +218,8 @@ extension ScanningViewController: ARSessionDelegate {
         }
         
         // Find bounds of the projected quadrilateral
-        let gridSpacingX = Float(settings!.camera!.shelfCoverageCellsSize) * OVERLAP_VALUE
-        let gridSpacingY = Float(settings!.camera!.shelfCoverageCellsSize) * OVERLAP_VALUE
+        let gridSpacingX = Float(settings.camera!.shelfCoverageCellsSize) * OVERLAP_VALUE
+        let gridSpacingY = Float(settings.camera!.shelfCoverageCellsSize) * OVERLAP_VALUE
 
         let minX = cornersPlane.map(\.x).min()! - gridSpacingX
         let maxX = cornersPlane.map(\.x).max()! + gridSpacingX
@@ -252,7 +265,7 @@ extension ScanningViewController: ARSessionDelegate {
         let newCells = findNewCells(gridPositionsToCheck, origin: origin, forward: forward, cameraPos: cameraPos, fov: fov, right: right, up: up)
 
         // Upload image if needed
-        if Double(newCells.count) > Double(gridPositionsToCheck.count) * settings!.camera!.shelfCoverageMinRatio {
+        if Double(newCells.count) > Double(gridPositionsToCheck.count) * settings.camera!.shelfCoverageMinRatio {
             sendUploadImageEvent(frame: frame)
 
             newCells.forEach { (gridPosition, transform) in
@@ -288,7 +301,6 @@ extension ScanningViewController: ARSessionDelegate {
 
             let toGrid = worldPos - cameraPos
             let distanceToPlane = simd_dot(toGrid, forward)
-            if distanceToPlane <= nearClip || distanceToPlane > farClip { return }
 
             let rightOffset = simd_dot(toGrid, right)
             let upOffset = simd_dot(toGrid, up)
@@ -313,8 +325,8 @@ extension ScanningViewController: ARSessionDelegate {
 
     private func createPlaneNode(color: UIColor) -> SCNNode {
         let planeGeometry = SCNPlane(
-            width: CGFloat(settings!.camera!.shelfCoverageCellsSize),
-            height: CGFloat(settings!.camera!.shelfCoverageCellsSize)
+            width: CGFloat(settings.camera!.shelfCoverageCellsSize),
+            height: CGFloat(settings.camera!.shelfCoverageCellsSize)
         )
         let planeMaterial = SCNMaterial()
         planeMaterial.diffuse.contents = color
@@ -339,13 +351,6 @@ extension ScanningViewController: ARSessionDelegate {
         let c = 1 - a - b
 
         return a >= 0 && a <= 1 && b >= 0 && b <= 1 && c >= 0 && c <= 1
-    }
-}
-
-extension UnsafeMutablePointer {
-    func valueAt(x: Int, y: Int, rowWidth: Int) -> Pointee {
-        let centerIndex = y * rowWidth + x
-        return self[centerIndex]
     }
 }
 
@@ -376,5 +381,15 @@ extension ARCamera {
 extension simd_float4 {
     var xyz: simd_float3 {
         simd_float3(x: x, y: y, z: z)
+    }
+}
+
+extension simd_float4x4 {
+    var eulerAngles: (x: Float, y: Float, z: Float) {
+        // X-Y-Z rotation order (pitch-yaw-roll)
+        let x = asin(columns.0.z)
+        let y = atan2(-columns.1.z, columns.2.z)
+        let z = atan2(-columns.0.y, columns.0.x)
+        return (x, y, z)
     }
 }

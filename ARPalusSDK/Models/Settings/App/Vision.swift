@@ -10,6 +10,8 @@ extension AppSettings {
         let version: Int
         let systemName: AppSettingName
         let tags: [String]
+
+        let minStartingDistance: Double
 //        var inferenceJobsEnabled: Bool = false
 //        let postSpecificDetections: Bool
 //        let anchorDistance: Double
@@ -175,5 +177,16 @@ extension AppSettings.Vision {
         let angleXSlices: Int
         let angleYRange: Double
         let angleYSlices: Int
+    }
+}
+
+extension AppSettings.Vision {
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decode(Int.self, forKey: .version)
+        systemName = try container.decode(AppSettingName.self, forKey: .systemName)
+        tags = try container.decode([String].self, forKey: .tags)
+
+        minStartingDistance = try container.decodeIfPresent(Double.self, forKey: .minStartingDistance) ?? 0.5
     }
 }
