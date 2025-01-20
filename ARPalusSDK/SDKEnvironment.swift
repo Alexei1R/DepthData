@@ -12,9 +12,9 @@ public enum ArpalusSDK {
                 let previousClientSettingsVersion = SDKEnvironment.shared.localStorage.clientSettings?.version
                 let clientSettings = try await SDKEnvironment.shared.settingsStore.getClientSettings()
                 print("Client settings: ", clientSettings)
-                if previousClientSettingsVersion != clientSettings.version {
+//                if previousClientSettingsVersion != clientSettings.version {
                     try await SDKEnvironment.shared.settingsStore.downloadAppSettings()
-                }
+//                }
                 try await SDKEnvironment.shared.settingsStore.getDeployments()
                 try await SDKEnvironment.shared.settingsStore.downloadProjects()
             } catch {

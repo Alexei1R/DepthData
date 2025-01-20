@@ -37,8 +37,8 @@ struct LoginPage: View {
         case signUp
     }
 
-    @State var email: String = ""
-    @State var password: String = ""
+    @State var email: String = "victor@thenoughtyfox.com"
+    @State var password: String = "123456"
     @State var mode: Mode = .signIn
 
     var onSignIn: (String, String) -> Void

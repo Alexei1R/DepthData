@@ -54,6 +54,11 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity
         configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
+        let bestFormat = CameraConfig.bestCameraConfig(
+            settings: settings!.camera!,
+            formats: ARWorldTrackingConfiguration.supportedVideoFormats
+        )
+        bestFormat.map { configuration.videoFormat = $0 }
 
         sceneView.session.run(configuration)
     }
@@ -121,8 +126,8 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
     private func drawPlane(transform: simd_float4x4, color: UIColor = .red) {
         let planeGeometry = SCNPlane(
-            width: settings!.camera!.shelfCoverageCellSize,
-            height: settings!.camera!.shelfCoverageCellSize
+            width: settings!.camera!.shelfCoverageCellsSize,
+            height: settings!.camera!.shelfCoverageCellsSize
         )
         let planeMaterial = SCNMaterial()
         planeMaterial.diffuse.contents = color
@@ -200,9 +205,9 @@ extension ScanningViewController: ARSessionDelegate {
         }
         
         // Find bounds of the projected quadrilateral
-        let gridSpacingX = Float(settings!.camera!.shelfCoverageCellSize) * OVERLAP_VALUE
-        let gridSpacingY = Float(settings!.camera!.shelfCoverageCellSize) * OVERLAP_VALUE
-        
+        let gridSpacingX = Float(settings!.camera!.shelfCoverageCellsSize) * OVERLAP_VALUE
+        let gridSpacingY = Float(settings!.camera!.shelfCoverageCellsSize) * OVERLAP_VALUE
+
         let minX = cornersPlane.map(\.x).min()! - gridSpacingX
         let maxX = cornersPlane.map(\.x).max()! + gridSpacingX
         let minY = cornersPlane.map(\.y).min()! - gridSpacingY
@@ -261,7 +266,7 @@ extension ScanningViewController: ARSessionDelegate {
     }
 
     private func findNewCells(
-        _ gridPositionsToCheck: [simd_float2],
+        _ gridPositionsToCheck: Set<simd_float2>,
         origin: simd_float4x4,
         forward: simd_float3,
         cameraPos: simd_float3,
@@ -308,8 +313,8 @@ extension ScanningViewController: ARSessionDelegate {
 
     private func createPlaneNode(color: UIColor) -> SCNNode {
         let planeGeometry = SCNPlane(
-            width: CGFloat(settings!.camera!.shelfCoverageCellSize),
-            height: CGFloat(settings!.camera!.shelfCoverageCellSize)
+            width: CGFloat(settings!.camera!.shelfCoverageCellsSize),
+            height: CGFloat(settings!.camera!.shelfCoverageCellsSize)
         )
         let planeMaterial = SCNMaterial()
         planeMaterial.diffuse.contents = color
