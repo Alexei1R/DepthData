@@ -158,90 +158,118 @@ extension ScanningViewController: ARSessionDelegate {
 
         let camera = frame.camera
         let cameraTransform = camera.transform
-        let cameraPos = simd_float3(
-            cameraTransform.columns.3.x,
-            cameraTransform.columns.3.y,
-            cameraTransform.columns.3.z
-        )
-
-        let forward = -simd_normalize(
-            simd_float3(
-                cameraTransform.columns.2.x,
-                cameraTransform.columns.2.y,
-                cameraTransform.columns.2.z
-            )
-        )
-        let right = simd_normalize(
-            simd_float3(
-                cameraTransform.columns.0.x,
-                cameraTransform.columns.0.y,
-                cameraTransform.columns.0.z
-            )
-        )
-        let up = simd_normalize(
-            simd_float3(
-                cameraTransform.columns.1.x,
-                cameraTransform.columns.1.y,
-                cameraTransform.columns.1.z
-            )
-        )
-
+        
+        // Get camera position and orientation vectors
+        let cameraPos = cameraTransform.columns.3.xyz
+        let forward = -simd_normalize(cameraTransform.columns.2.xyz)
+        
+        // Calculate a single distance that intersects our plane
+        let originInverse = simd_inverse(origin)
+        let cameraInPlaneSpace = (originInverse * simd_float4(cameraPos, 1)).xyz
+        let forwardInPlaneSpace = simd_normalize((originInverse * simd_float4(forward, 0)).xyz)
+        
+        // Since our plane is at z=0 in plane space, calculate intersection distance
+        // using the similar triangles formed by the camera angle
+        let distanceToPlane = abs(cameraInPlaneSpace.z / forwardInPlaneSpace.z)
+        
+        // Calculate frustum dimensions at the intersection distance
         let fov = camera.fov
-        let horizontalFOV = fov.x
-        let verticalFOV = fov.y
+        let frustumHeight = 2.0 * distanceToPlane * tan(fov.y / 2.0)
+        let frustumWidth = 2.0 * distanceToPlane * tan(fov.x / 2.0)
+        
+        // Calculate the four corners of the frustum at the intersection
+        let right = simd_normalize(simd_cross(forward, simd_float3(0, 1, 0)))
+        let up = simd_normalize(simd_cross(right, forward))
 
-        let distances: [Float] = [nearClip, farClip / 2, farClip]
+        // Adjust corner calculation to account for perspective
+        let halfWidth = frustumWidth / 2
+        let halfHeight = frustumHeight / 2
+        let center = cameraPos + forward * distanceToPlane
+
+        let cornersWorld: [simd_float3] = [
+            center + (-right * halfWidth + up * halfHeight),    // top-left (0)
+            center + (right * halfWidth + up * halfHeight),     // top-right (1)
+            center + (right * halfWidth - up * halfHeight),     // bottom-right (2)
+            center + (-right * halfWidth - up * halfHeight)     // bottom-left (3)
+        ]
+
+        // Project corners to plane space
+        let cornersPlane = cornersWorld.map { worldPos -> simd_float2 in
+            let planePos = (originInverse * simd_float4(worldPos, 1)).xyz
+            return simd_float2(planePos.x, planePos.y)
+        }
+        
+        // Find bounds of the projected quadrilateral
+        let gridSpacingX = Float(settings!.camera!.shelfCoverageCellSize) * OVERLAP_VALUE
+        let gridSpacingY = Float(settings!.camera!.shelfCoverageCellSize) * OVERLAP_VALUE
+        
+        let minX = cornersPlane.map(\.x).min()! - gridSpacingX
+        let maxX = cornersPlane.map(\.x).max()! + gridSpacingX
+        let minY = cornersPlane.map(\.y).min()! - gridSpacingY
+        let maxY = cornersPlane.map(\.y).max()! + gridSpacingY
+        
+        let startX = round(minX / gridSpacingX) * gridSpacingX
+        let endX = round(maxX / gridSpacingX) * gridSpacingX
+        let startY = round(minY / gridSpacingY) * gridSpacingY
+        let endY = round(maxY / gridSpacingY) * gridSpacingY
+        
         var gridPositionsToCheck: Set<SIMD2<Float>> = []
-
-        for distance in distances {
-            let frustumHeight = 2.0 * distance * tan(verticalFOV / 2.0)
-            let frustumWidth = 2.0 * distance * tan(horizontalFOV / 2.0)
-
-            let cornersInCameraSpace: [simd_float3] = [
-                // Top left
-                cameraPos + forward * distance - right * (frustumWidth / 2) + up * (frustumHeight / 2),
-                // Top right
-                cameraPos + forward * distance + right * (frustumWidth / 2) + up * (frustumHeight / 2),
-                // Bottom left
-                cameraPos + forward * distance - right * (frustumWidth / 2) - up * (frustumHeight / 2),
-                // Bottom right
-                cameraPos + forward * distance + right * (frustumWidth / 2) - up * (frustumHeight / 2)
-            ]
-
-            let gridSpacingX = Float(settings!.camera!.shelfCoverageCellSize) * OVERLAP_VALUE
-            let gridSpacingY = Float(settings!.camera!.shelfCoverageCellSize) * OVERLAP_VALUE
-
-            let originInverse = simd_inverse(origin)
-            let corners = cornersInCameraSpace.map { worldPos -> simd_float3 in
-                let worldPoint = simd_float4(worldPos.x, worldPos.y, worldPos.z, 1)
-                let localPoint = originInverse * worldPoint
-                return simd_float3(localPoint.x, localPoint.y, localPoint.z)
-            }
-
-            let minX = corners.map(\.x).min()! - gridSpacingX
-            let maxX = corners.map(\.x).max()! + gridSpacingX
-            let minY = corners.map(\.y).min()! - gridSpacingY
-            let maxY = corners.map(\.y).max()! + gridSpacingY
-
-            let startX = round(minX / gridSpacingX) * gridSpacingX
-            let endX = round(maxX / gridSpacingX) * gridSpacingX
-            let startY = round(minY / gridSpacingY) * gridSpacingY
-            let endY = round(maxY / gridSpacingY) * gridSpacingY
-
-            // Add potential grid positions
-            var x = startX
-            while x <= endX {
-                var y = startY
-                while y <= endY {
-                    let gridPosition = SIMD2<Float>(x, y)
-                    gridPositionsToCheck.insert(gridPosition)
-                    y += gridSpacingY
+        
+        // Add potential grid positions
+        var x = startX
+        while x <= endX {
+            var y = startY
+            while y <= endY {
+                let gridPosition = SIMD2<Float>(x, y)
+                
+                // Check all four corners of the grid cell
+                let cellCorners = [
+                    SIMD2<Float>(x - gridSpacingX/2, y - gridSpacingY/2),  // bottom-left
+                    SIMD2<Float>(x + gridSpacingX/2, y - gridSpacingY/2),  // bottom-right
+                    SIMD2<Float>(x - gridSpacingX/2, y + gridSpacingY/2),  // top-left
+                    SIMD2<Float>(x + gridSpacingX/2, y + gridSpacingY/2)   // top-right
+                ]
+                
+                // Check if all corners are inside the projected quadrilateral
+                let allCornersInside = cellCorners.allSatisfy { corner in
+                    isPointInQuadrilateral(point: corner, corners: cornersPlane)
                 }
-                x += gridSpacingX
+                
+                if allCornersInside {
+                    gridPositionsToCheck.insert(gridPosition)
+                }
+                
+                y += gridSpacingY
             }
+            x += gridSpacingX
         }
 
-        let newCells = gridPositionsToCheck.reduce(into: [(SIMD2<Float>, simd_float4x4)]()) { cells, gridPosition in
+        let newCells = findNewCells(gridPositionsToCheck, origin: origin, forward: forward, cameraPos: cameraPos, fov: fov, right: right, up: up)
+
+        // Upload image if needed
+        if Double(newCells.count) > Double(gridPositionsToCheck.count) * settings!.camera!.shelfCoverageMinRatio {
+            sendUploadImageEvent(frame: frame)
+
+            newCells.forEach { (gridPosition, transform) in
+                let node = createPlaneNode(color: .red)
+                node.simdTransform = transform
+                sceneView.scene.rootNode.addChildNode(node)
+                placedPositions.insert(gridPosition)
+                visibleNodes[gridPosition] = node
+            }
+        }
+    }
+
+    private func findNewCells(
+        _ gridPositionsToCheck: [simd_float2],
+        origin: simd_float4x4,
+        forward: simd_float3,
+        cameraPos: simd_float3,
+        fov: simd_float2,
+        right: simd_float3,
+        up: simd_float3
+    ) -> [(cell: simd_float2, transform: simd_float4x4)] {
+        gridPositionsToCheck.reduce(into: [(SIMD2<Float>, simd_float4x4)]()) { cells, gridPosition in
             if placedPositions.contains(gridPosition) { return }
 
             let localToWorld = origin
@@ -264,23 +292,10 @@ extension ScanningViewController: ARSessionDelegate {
             let verticalAngle = abs(atan2(upOffset, distanceToPlane))
 
             // Check if point is within FOV
-            if horizontalAngle <= horizontalFOV / 2 && verticalAngle <= verticalFOV / 2 {
+            if horizontalAngle <= fov.x / 2 && verticalAngle <= fov.y / 2 {
                 var transform = origin
                 transform.columns.3 = simd_float4(worldPos, 1)
                 cells += [(gridPosition, transform)]
-            }
-        }
-
-        // Upload image if needed
-        if Double(newCells.count) > Double(gridPositionsToCheck.count) * settings!.camera!.shelfCoverageMinRatio {
-            sendUploadImageEvent(frame: frame)
-
-            newCells.forEach { (gridPosition, transform) in
-                let node = createPlaneNode(color: .red)
-                node.simdTransform = transform
-                sceneView.scene.rootNode.addChildNode(node)
-                placedPositions.insert(gridPosition)
-                visibleNodes[gridPosition] = node
             }
         }
     }
@@ -304,6 +319,21 @@ extension ScanningViewController: ARSessionDelegate {
 
     private func lerp(_ a: Float, _ b: Float, fraction: Float) -> Float {
         return a + (b - a) * fraction
+    }
+
+    private func isPointInQuadrilateral(point: SIMD2<Float>, corners: [SIMD2<Float>]) -> Bool {
+        return isPointInTriangle(point: point, p1: corners[0], p2: corners[1], p3: corners[2]) ||
+               isPointInTriangle(point: point, p1: corners[0], p2: corners[2], p3: corners[3])
+    }
+
+    // barycentric check
+    private func isPointInTriangle(point: SIMD2<Float>, p1: SIMD2<Float>, p2: SIMD2<Float>, p3: SIMD2<Float>) -> Bool {
+        let denominator = (p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y)
+        let a = ((p2.y - p3.y) * (point.x - p3.x) + (p3.x - p2.x) * (point.y - p3.y)) / denominator
+        let b = ((p3.y - p1.y) * (point.x - p3.x) + (p1.x - p3.x) * (point.y - p3.y)) / denominator
+        let c = 1 - a - b
+
+        return a >= 0 && a <= 1 && b >= 0 && b <= 1 && c >= 0 && c <= 1
     }
 }
 
@@ -335,5 +365,11 @@ extension ARCamera {
         let verticalFOV = 2 * atan(imageHeight / (2 * focalLengthY))
 
         return simd_float2(horizontalFOV, verticalFOV)
+    }
+}
+
+extension simd_float4 {
+    var xyz: simd_float3 {
+        simd_float3(x: x, y: y, z: z)
     }
 }

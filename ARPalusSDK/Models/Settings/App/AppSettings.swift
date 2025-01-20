@@ -32,13 +32,34 @@ extension AppSettings {
         for setting in settings {
             switch setting.appSetting.systemName {
             case .debug:
-                debug = try decoder.decode(Debug.self, from: setting.rawData)
+                do {
+                    debug = try decoder.decode(Debug.self, from: setting.rawData)
+                } catch {
+                    print(error)
+                    throw error
+                }
+
             case .camera:
-                camera = try decoder.decode(Camera.self, from: setting.rawData)
+                do {
+                    camera = try decoder.decode(Camera.self, from: setting.rawData)
+                } catch {
+                    print(error)
+                    throw error
+                }
             case .vision:
-                vision = try decoder.decode(Vision.self, from: setting.rawData)
+                do {
+                    vision = try decoder.decode(Vision.self, from: setting.rawData)
+                } catch {
+                    print(error)
+                    throw error
+                }
             case .planogram:
-                planogram = try decoder.decode(Planogram.self, from: setting.rawData)
+                do {
+                    planogram = try decoder.decode(Planogram.self, from: setting.rawData)
+                } catch {
+                    print(error)
+                    throw error
+                }
             }
         }
         self.init(debug: debug, camera: camera, vision: vision, planogram: planogram)
