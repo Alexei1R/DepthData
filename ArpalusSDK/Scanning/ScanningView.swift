@@ -32,6 +32,8 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
             view.bottomAnchor.constraint(equalTo: sceneView.bottomAnchor),
             view.trailingAnchor.constraint(equalTo: sceneView.trailingAnchor),
             view.leadingAnchor.constraint(equalTo: sceneView.leadingAnchor),
+//            view.centerYAnchor.constraint(equalTo: sceneView.centerYAnchor),
+//            sceneView.heightAnchor.constraint(equalTo: sceneView.widthAnchor, multiplier: 1.3333)
         ])
 
         createOverlay()
@@ -316,10 +318,10 @@ extension ScanningViewController: ARSessionDelegate {
         let center = cameraPos + forward * distanceToPlane
 
         let cornersWorld: [simd_float3] = [
-            center + (-right * halfWidth + up * halfHeight),    // top-left (0)
-            center + (right * halfWidth + up * halfHeight),     // top-right (1)
-            center + (right * halfWidth - up * halfHeight),     // bottom-right (2)
-            center + (-right * halfWidth - up * halfHeight)     // bottom-left (3)
+            center + (-right * halfHeight - up * halfWidth),    // bottom-left (0)
+            center + (-right * halfHeight + up * halfWidth),    // top-left (1)
+            center + (right * halfHeight + up * halfWidth),     // top-right (2)
+            center + (right * halfHeight - up * halfWidth)      // bottom-right (3)
         ]
 
         // Project corners to plane space
@@ -374,6 +376,7 @@ extension ScanningViewController: ARSessionDelegate {
         }
 
         let newCells = findNewCells(gridPositionsToCheck, origin: origin, forward: forward, cameraPos: cameraPos, fov: fov, right: right, up: up)
+//        sceneView.scene.rootNode.childNodes.forEach { $0.removeFromParentNode() }
 
         // Upload image if needed
         if Double(newCells.count) > Double(gridPositionsToCheck.count) * settings.camera.shelfCoverageMinRatio {
