@@ -6,7 +6,7 @@ class MotionTracker {
     private let motionManager = CMMotionManager()
     private var lastPosition: simd_float3?
     private var lastRotation: simd_quatf?
-    private let updateInterval: TimeInterval = 1 / 60.0 // 60Hz updates
+    private let updateInterval: TimeInterval = 1 / 60.0
 
     private(set) var acceleration: Double = 0
     private(set) var angularAcceleration: Double = 0

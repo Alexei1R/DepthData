@@ -47,13 +47,12 @@ final class ImageService {
         "\(currentDate)_\(currentTime)_\(miliUUIDPart)"
     }
 
-    func uploadImageToFirebase(image: UIImage?, arFrame: ARFrame?) {
+    func saveImage(_ image: UIImage, arFrame: ARFrame, metadata: ImageMetadata) {
         isScanning = true
         guard let userSettings = localStorage.userSettings else { isScanning = false; return }
-        guard let image else { isScanning = false; return }
 
         guard let imageData = image.jpegData(compressionQuality: 0.75) else { return }
-        let metadata = Data(createMetadata(from: image, arFrame: arFrame)?.data(using: .utf8) ?? Data())
+        let metadata = encodeMetadata(metadata) ?? Data()
         if path == nil {
             //Sessions/Arpalus/NetanyaOffice/netanyaoffice3dev/2025-01-16/2025-01-16_14-03-24/2025-01-16_14-07-48_507d2731e4e8/Images
             path = "Sessions/\(userSettings.client)/\(userSettings.project)/\(userSettings.deployment.lowercased())\(userSettings.settings)/\(currentDate)/\(currentDate)_\(currentTime)/\(timestamp)/Images/"
@@ -73,7 +72,7 @@ final class ImageService {
         let metadataRef = storage.reference().child(path + metadataFilename)
         Task {
             do {
-                _ = try await imageRef.putDataAsync(imageData,metadata: imageMetadata)
+                _ = try await imageRef.putDataAsync(imageData, metadata: imageMetadata)
                 _ = try await metadataRef.putDataAsync(metadata, metadata: metadataMetadata)
                 self.path =  nil
             } catch {
@@ -82,66 +81,9 @@ final class ImageService {
         }
     }
 
-    func createMetadata(from image: UIImage, arFrame: ARFrame?, frameNumber: Int = 1) -> String? {
-        let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .long)
-        let imageWidth = Int(image.size.width)
-        let imageHeight = Int(image.size.height)
-        guard let arFrame else {
-            print("ARFrame is nil. Cannot extract AR data.")
-            return nil
-        }
-        let camera = arFrame.camera
-
-        
-        //znear zfar hardcoded
-//        let projectionMatrix = CameraInfo.Matrix4x4(matrix: camera.projectionMatrix(for: .portrait, viewportSize: image.size, zNear: 0.001, zFar: 1000.0).array)
-//        let displayMatrix = CameraInfo.Matrix4x4(matrix: camera.viewMatrix(for: .portrait).array)
-//        let focalLength = CameraInfo.Point(x: Float(camera.intrinsics.columns.0.x), y: Float(camera.intrinsics.columns.1.y))
-//        let principalPoint = CameraInfo.Point(x: Float(camera.intrinsics.columns.2.x), y: Float(camera.intrinsics.columns.2.y))
-//        let resolution = CameraInfo.Resolution(x: imageWidth, y: imageHeight)
-//
-//        let cameraInfo = CameraInfo(
-//            projectionMatrix: projectionMatrix,
-//            displayMatrix: displayMatrix,
-//            focalLength: focalLength,
-//            principalPoint: principalPoint,
-//            resolution: resolution
-//        )
-//
-//        let metadata = ImageMetadata(
-//            cameraInfo: cameraInfo,
-//            timestamp: timestamp,
-//            imageWidth: imageWidth,
-//            imageHeight: imageHeight,
-//            frameNumber: frameNumber
-//        )
-
-        let metadata = ImageMetadata(
-            cameraInfo: getCameraInfo(camera: camera, image: image),
-            cameraTransformBefore: "", // Test values
-            cameraTransformBeforeOriginal: "", // Test values
-            cameraTransformAfter: "", // Test values
-            originCaptureTransform: "", // Test values
-            originDoneTransform: "", // Test values
-            timestamp: timestamp,
-            time: 0.0, //Test value
-            frameNumber: 0, //Test value
-            imgCount: 0, //Test value
-            saveButtonUsed: false, //Test value
-            imageWidth: Int(camera.imageResolution.width),
-            imageHeight: Int(camera.imageResolution.height),
-            averageFps: 29, //Test value
-            minFps: 0, //Test value
-            velocity: 0, //Test value
-            angularVelocity: 0, //Test value
-            acceleration: 0, //Test value
-            angularAcceleration: 0, //Test value
-            frameResults: [], //Test value
-            pointCloud: [] //Test value
-        )
+    private func encodeMetadata(_ metadata: ImageMetadata) -> Data? {
         do {
-            let jsonData = try JSONEncoder().encode(metadata)
-            return String(data: jsonData, encoding: .utf8)
+            return try JSONEncoder().encode(metadata)
         } catch {
             print("Failed to encode metadata to JSON: \(error)")
             return nil

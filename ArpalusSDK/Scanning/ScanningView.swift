@@ -12,6 +12,10 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
     lazy var calibrator = Calibrator(camera: settings.camera, vision: settings.vision)
     let motionTracker = MotionTracker()
     var overlayViewModel: OverlayViewModel!
+    let fpsCounter = FPSCounter()
+
+    var frameNumber = 0
+    var imgCount = 0
 
     var origin: simd_float4x4?
     private var placedPositions: Set<SIMD2<Float>> = []
@@ -38,11 +42,10 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         sceneView.automaticallyUpdatesLighting = true
         sceneView.session.delegate = self
 
-        //        sceneView.debugOptions.insert(.dept)
-
-        // Create a session configuration for world tracking
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity
+        configuration.isLightEstimationEnabled = true
+        
         let frameSemantics: ARConfiguration.FrameSemantics = [.sceneDepth, .smoothedSceneDepth]
         if ARWorldTrackingConfiguration.supportsFrameSemantics(frameSemantics) {
             configuration.frameSemantics = frameSemantics
@@ -171,10 +174,103 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         }
         return true
     }
+
+    private func buildCameraInfo(_ frame: ARFrame) -> CameraInfo {
+        let light = frame.lightEstimate
+        let directionalLight = light as? ARDirectionalLightEstimate
+        let sphericalHarmonics = directionalLight
+            .flatMap { try? JSONDecoder().decode([[Double]].self, from: $0.sphericalHarmonicsCoefficients) }
+        return CameraInfo(
+            projectionMatrix: frame.camera.projectionMatrix.codableMatrix,
+            displayMatrix: .init(matrix: []),  // This appears to be unused/empty
+            exposureDuration: frame.camera.exposureDuration,
+            exposureOffset: Double(frame.camera.exposureOffset),
+            focalLength: .init(
+                x: Double(frame.camera.intrinsics[0][0]),
+                y: Double(frame.camera.intrinsics[1][1])
+            ),
+            principalPoint: .init(
+                x: Double(frame.camera.intrinsics[2][0]),
+                y: Double(frame.camera.intrinsics[2][1])
+            ),
+            resolution: .init(
+                x: Int(frame.camera.imageResolution.height),
+                y: Int(frame.camera.imageResolution.width)
+            ),
+            averageBrightness: 0,
+            averageColorTemperature: light.map { Double($0.ambientColorTemperature) } ?? 0,
+            averageIntensityInLumens: light.map { Double($0.ambientIntensity) } ?? 0,
+            mainLightIntensityLumens: (light as? ARDirectionalLightEstimate)
+                .map { Double($0.primaryLightIntensity) } ?? 0,
+            averageMainLightBrightness: 0,
+            colorCorrection: .init(
+                r: 1,
+                g: 1,
+                b: 1,
+                a: 1
+            ),
+            mainLightColor: .init(
+                r: 1,
+                g: 1,
+                b: 1,
+                a: 1
+            ),
+            mainLightDirection: .init(
+                x: Double(directionalLight?.primaryLightDirection.x ?? 0),
+                y: Double(directionalLight?.primaryLightDirection.y ?? 0),
+                z: Double(directionalLight?.primaryLightDirection.z ?? 0)
+            ),
+            ambientSphericalHarmonics: .init(coefficients: sphericalHarmonics ?? [])
+        )
+    }
+
+    private func buildImageMetadata(
+        _ frame: ARFrame,
+        origin: simd_float4x4,
+        image: UIImage
+    ) -> ImageMetadata {
+        let cameraInfo = (try? JSONEncoder().encode(buildCameraInfo(frame))).flatMap {
+            String(data: $0, encoding: .utf8)
+        } ?? ""
+        let camTransform = frame.camera.transform
+        let camTransformString = buildCameraPoseString(
+            position: camTransform.columns.3.xyz,
+            rotation: simd_quatf(camTransform)
+        )
+        let originString = buildCameraPoseString(
+            position: origin.columns.3.xyz,
+            rotation: simd_quatf(origin)
+        )
+        return ImageMetadata(
+            cameraInfo: cameraInfo,
+            cameraTransformBefore: camTransformString,
+            cameraTransformBeforeOriginal: camTransformString,
+            cameraTransformAfter: "",
+            originCaptureTransform: originString,
+            originDoneTransform: originString,
+            timestamp: "\(frame.timestamp)",
+            time: Date().timeIntervalSince1970,
+            frameNumber: frameNumber,
+            imgCount: imgCount,
+            saveButtonUsed: false,
+            imageWidth: Int(image.size.width),
+            imageHeight: Int(image.size.height),
+            averageFps: Double(fpsCounter.averageFPS),
+            minFps: Double(fpsCounter.lowestFPS),
+            velocity: Double(motionTracker.velocity),
+            angularVelocity: Double(motionTracker.angularVelocity),
+            acceleration: motionTracker.acceleration,
+            angularAcceleration: motionTracker.angularAcceleration,
+            frameResults: [],
+            pointCloud: ["x y z"]
+        )
+    }
 }
 
 extension ScanningViewController: ARSessionDelegate {
     public func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        fpsCounter.update(frame)
+        defer { frameNumber += 1 }
         overlayViewModel.text = nil
         guard let origin else {
             return tryCalibrate(frame)
@@ -276,7 +372,13 @@ extension ScanningViewController: ARSessionDelegate {
 
         // Upload image if needed
         if Double(newCells.count) > Double(gridPositionsToCheck.count) * settings.camera.shelfCoverageMinRatio {
-            sendUploadImageEvent(frame: frame)
+            let image = getScaledImage(buffer: frame.capturedImage)
+            imgCount += 1
+            SDKEnvironment.shared.imageSevice.saveImage(
+                image,
+                arFrame: frame,
+                metadata: buildImageMetadata(frame, origin: origin, image: image)
+            )
 
             newCells.forEach { (gridPosition, transform) in
                 let node = createPlaneNode(color: .white)
@@ -325,11 +427,6 @@ extension ScanningViewController: ARSessionDelegate {
                 cells += [(gridPosition, transform)]
             }
         }
-    }
-
-    private func sendUploadImageEvent(frame: ARFrame) {
-        let image = getScaledImage(buffer: frame.capturedImage)
-        SDKEnvironment.shared.imageSevice.uploadImageToFirebase(image: image, arFrame: frame)
     }
 
     private func getScaledImage(buffer: CVPixelBuffer) -> UIImage {

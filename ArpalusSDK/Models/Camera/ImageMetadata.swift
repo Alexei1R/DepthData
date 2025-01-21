@@ -24,3 +24,20 @@ struct ImageMetadata: Codable {
     var pointCloud: [String]
 }
 
+import simd
+
+func buildCameraPoseString(position: simd_float3, rotation: simd_quatf) -> String {
+    let comma = ","
+    let separator = "^"
+
+    return String(
+        format: "%.6f,%.6f,%.6f^%.6f,%.6f,%.6f,%.6f",
+        position.x,
+        position.y,
+        position.z,
+        rotation.vector.x,
+        rotation.vector.y,
+        rotation.vector.z,
+        rotation.vector.w
+    )
+}

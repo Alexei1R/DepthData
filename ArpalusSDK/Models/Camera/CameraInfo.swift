@@ -24,5 +24,4 @@ struct CameraInfo: Codable {
     var mainLightColor: RGBA
     var mainLightDirection: Vector
     var ambientSphericalHarmonics: AmbientSphericalHarmonics
-
 }
