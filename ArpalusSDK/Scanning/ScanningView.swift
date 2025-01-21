@@ -177,6 +177,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
     private func buildCameraInfo(_ frame: ARFrame) -> CameraInfo {
         let light = frame.lightEstimate
+        // this will be nil
         let directionalLight = light as? ARDirectionalLightEstimate
         let sphericalHarmonics = directionalLight
             .flatMap { try? JSONDecoder().decode([[Double]].self, from: $0.sphericalHarmonicsCoefficients) }
@@ -203,18 +204,8 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
             mainLightIntensityLumens: (light as? ARDirectionalLightEstimate)
                 .map { Double($0.primaryLightIntensity) } ?? 0,
             averageMainLightBrightness: 0,
-            colorCorrection: .init(
-                r: 1,
-                g: 1,
-                b: 1,
-                a: 1
-            ),
-            mainLightColor: .init(
-                r: 1,
-                g: 1,
-                b: 1,
-                a: 1
-            ),
+            colorCorrection: .init(r: 1, g: 1, b: 1, a: 1),
+            mainLightColor: .init(r: 1, g: 1, b: 1, a: 1),
             mainLightDirection: .init(
                 x: Double(directionalLight?.primaryLightDirection.x ?? 0),
                 y: Double(directionalLight?.primaryLightDirection.y ?? 0),
@@ -241,6 +232,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
             position: origin.columns.3.xyz,
             rotation: simd_quatf(origin)
         )
+
         return ImageMetadata(
             cameraInfo: cameraInfo,
             cameraTransformBefore: camTransformString,
@@ -262,8 +254,21 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
             acceleration: motionTracker.acceleration,
             angularAcceleration: motionTracker.angularAcceleration,
             frameResults: [],
-            pointCloud: ["x y z"]
+            pointCloud: getPointCloudInViewport(frame).map { "\($0.x) \($0.y) \($0.z)" }
         )
+    }
+
+    private func getPointCloudInViewport(_ frame: ARFrame) -> [simd_float3] {
+        frame.rawFeaturePoints?.points.filter { point in
+            let projectedPoint = frame.camera.projectPoint(
+                point,
+                orientation: .portrait,
+                viewportSize: frame.camera.imageResolution
+            )
+
+            return projectedPoint.x >= 0 && projectedPoint.x < frame.camera.imageResolution.width &&
+               projectedPoint.y >= 0 && projectedPoint.y < frame.camera.imageResolution.height
+        } ?? []
     }
 }
 
@@ -348,10 +353,10 @@ extension ScanningViewController: ARSessionDelegate {
                 
                 // Check all four corners of the grid cell
                 let cellCorners = [
-                    SIMD2<Float>(x - gridSpacingX/2, y - gridSpacingY/2),  // bottom-left
-                    SIMD2<Float>(x + gridSpacingX/2, y - gridSpacingY/2),  // bottom-right
-                    SIMD2<Float>(x - gridSpacingX/2, y + gridSpacingY/2),  // top-left
-                    SIMD2<Float>(x + gridSpacingX/2, y + gridSpacingY/2)   // top-right
+                    SIMD2<Float>(x - gridSpacingX / 2, y - gridSpacingY / 2),  // bottom-left
+                    SIMD2<Float>(x + gridSpacingX / 2, y - gridSpacingY / 2),  // bottom-right
+                    SIMD2<Float>(x - gridSpacingX / 2, y + gridSpacingY / 2),  // top-left
+                    SIMD2<Float>(x + gridSpacingX / 2, y + gridSpacingY / 2)   // top-right
                 ]
                 
                 // Check if all corners are inside the projected quadrilateral
