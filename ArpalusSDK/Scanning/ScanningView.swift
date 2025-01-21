@@ -60,7 +60,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
     }
 
     private func createOverlay() {
-        overlayViewModel = OverlayViewModel()
+        overlayViewModel = OverlayViewModel(imageService: SDKEnvironment.shared.imageSevice)
         let overlay = Overlay(viewModel: overlayViewModel)
 
         let vc = UIHostingController(rootView: overlay)
@@ -441,7 +441,7 @@ extension ScanningViewController: ARSessionDelegate {
         guard settings.camera.lowerSaveResolution, Int(buffer.size.width) != settings.camera.saveResolutionWidth else {
             return UIImage(ciImage: image)
         }
-        let scale = CGFloat(settings.camera.saveResolutionWidth) / buffer.size.width
+        let scale = CGFloat(settings.camera.saveResolutionWidth) / buffer.size.height
         return UIImage(ciImage: image.transformed(by: .init(scaleX: scale, y: scale)))
     }
 
