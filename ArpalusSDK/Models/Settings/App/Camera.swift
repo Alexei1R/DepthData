@@ -52,9 +52,9 @@ extension AppSettings {
         var angleTooSteepWarning = true
         var tooCloseToShelfWarning = true
         var tooFarToShelfWarning = true
-//        let motionSpeedWarning: Bool
-//        let maxMotionAccelerationSpeed: Double
-//        let maxMotionAngularAccelerationSpeed: Double
+        var motionSpeedWarning = true
+        var maxMotionAccelerationSpeed = 0.2
+        var maxMotionAngularAccelerationSpeed: Double = 4
 //        let motionSpeedDelayWarning: Double
 //        let maxWarningsThreshold: Int
 //        let maxWarningsTimeframe: Double

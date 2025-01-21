@@ -7,12 +7,13 @@ let OVERLAP_VALUE : Float = 1.1
 public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
     let sceneView = ARSCNView()
-    var origin: simd_float4x4?
 
     var settings = SDKEnvironment.shared.localStorage.appSettings!
     lazy var calibrator = Calibrator(camera: settings.camera, vision: settings.vision)
+    let motionTracker = MotionTracker()
     var overlayViewModel: OverlayViewModel!
 
+    var origin: simd_float4x4?
     private var placedPositions: Set<SIMD2<Float>> = []
 
     private var visibleNodes: [SIMD2<Float>: SCNNode] = [:]
@@ -157,6 +158,19 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         }
         return true
     }
+
+    private func isValidSpeed(_ frame: ARFrame) -> Bool {
+        motionTracker.update(frame: frame)
+        if motionTracker.acceleration > settings.camera.maxMotionAccelerationSpeed {
+            overlayViewModel.text = "Move slower"
+            return false
+        }
+        if motionTracker.angularAcceleration > settings.camera.maxMotionAngularAccelerationSpeed {
+            overlayViewModel.text = "Rotate slower"
+            return false
+        }
+        return true
+    }
 }
 
 extension ScanningViewController: ARSessionDelegate {
@@ -166,11 +180,10 @@ extension ScanningViewController: ARSessionDelegate {
             return tryCalibrate(frame)
         }
         guard overlayViewModel.isScanning else { return }
+        guard isValidSpeed(frame), isValidAngle(frame: frame) else { return }
 
         let camera = frame.camera
         let cameraTransform = camera.transform
-
-        guard isValidAngle(frame: frame) else { return }
 
         // Get camera position and orientation vectors
         let cameraPos = cameraTransform.columns.3.xyz
