@@ -10,6 +10,7 @@ struct AppSettings: Equatable, Codable {
     let camera: Camera
     let vision: Vision
     let planogram: Planogram
+    let text: TextSettings
 }
 
 extension AppSettings {
@@ -27,7 +28,7 @@ extension AppSettings {
             }
             
         }
-        var (debug, camera, vision, planogram) = (Debug(), Camera(), Vision(), Planogram())
+        var (debug, camera, vision, planogram, text) = (Debug(), Camera(), Vision(), Planogram(), TextSettings())
         for setting in settings {
             switch setting.appSetting.systemName {
             case .debug:
@@ -59,9 +60,16 @@ extension AppSettings {
                     print(error)
                     throw error
                 }
+            case .text:
+                do {
+                    text =  try customDecode(data: setting.rawData, defaultValue: text)
+                } catch {
+                    print(error)
+                    throw error
+                }
             }
         }
-        self.init(debug: debug, camera: camera, vision: vision, planogram: planogram)
+        self.init(debug: debug, camera: camera, vision: vision, planogram: planogram, text: text)
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -70,8 +78,9 @@ extension AppSettings {
         let vision = try jsonEncoder.encode(vision)
         let camera = try jsonEncoder.encode(camera)
         let planogram = try jsonEncoder.encode(planogram)
+        let text = try jsonEncoder.encode(text)
 
-        let settings = [debug, vision, camera, planogram]
+        let settings = [debug, vision, camera, planogram, text]
             .compactMap { String(data: $0, encoding: .utf8) }
 
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -84,6 +93,7 @@ enum AppSettingName: String, Codable {
     case camera = "CameraCaptureSettings"
     case vision = "VisionInferenceSettings"
     case planogram = "PlanogramSettings"
+    case text = "TextSettings"
 }
 
 struct AppSettingWrapper: Codable {
