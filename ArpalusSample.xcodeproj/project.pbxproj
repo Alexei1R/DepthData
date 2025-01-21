@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4212C7292D30075F00072660 /* ARPalusSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4212C7232D30075F00072660 /* ARPalusSDK.framework */; };
-		4212C72A2D30075F00072660 /* ARPalusSDK.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4212C7232D30075F00072660 /* ARPalusSDK.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4212C7292D30075F00072660 /* ArpalusSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4212C7232D30075F00072660 /* ArpalusSDK.framework */; };
+		4212C72A2D30075F00072660 /* ArpalusSDK.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4212C7232D30075F00072660 /* ArpalusSDK.framework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4212C7972D355B0800072660 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C7962D355B0800072660 /* FirebaseAuth */; };
 		4212C7992D355B0800072660 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C7982D355B0800072660 /* FirebaseCore */; };
 		4212C79B2D355B0800072660 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 4212C79A2D355B0800072660 /* FirebaseCrashlytics */; };
@@ -35,7 +35,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				4212C72A2D30075F00072660 /* ARPalusSDK.framework in Embed Frameworks */,
+				4212C72A2D30075F00072660 /* ArpalusSDK.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -44,7 +44,7 @@
 
 /* Begin PBXFileReference section */
 		4212C6802D23F82300072660 /* ArpalusSample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArpalusSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4212C7232D30075F00072660 /* ARPalusSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ARPalusSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4212C7232D30075F00072660 /* ArpalusSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ArpalusSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -55,12 +55,12 @@
 			);
 			target = 4212C67F2D23F82300072660 /* ArpalusSample */;
 		};
-		4212C72E2D30075F00072660 /* Exceptions for "ARPalusSDK" folder in "ARPalusSDK" target */ = {
+		4212C72E2D30075F00072660 /* Exceptions for "ArpalusSDK" folder in "ArpalusSDK" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			publicHeaders = (
-				ARPalusSDK.h,
+				ArpalusSDK.h,
 			);
-			target = 4212C7222D30075F00072660 /* ARPalusSDK */;
+			target = 4212C7222D30075F00072660 /* ArpalusSDK */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -73,12 +73,12 @@
 			path = ArpalusSample;
 			sourceTree = "<group>";
 		};
-		4212C7242D30075F00072660 /* ARPalusSDK */ = {
+		4212C7242D30075F00072660 /* ArpalusSDK */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4212C72E2D30075F00072660 /* Exceptions for "ARPalusSDK" folder in "ARPalusSDK" target */,
+				4212C72E2D30075F00072660 /* Exceptions for "ArpalusSDK" folder in "ArpalusSDK" target */,
 			);
-			path = ARPalusSDK;
+			path = ArpalusSDK;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -88,7 +88,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4212C7292D30075F00072660 /* ARPalusSDK.framework in Frameworks */,
+				4212C7292D30075F00072660 /* ArpalusSDK.framework in Frameworks */,
 				4212C79B2D355B0800072660 /* FirebaseCrashlytics in Frameworks */,
 				4212C7992D355B0800072660 /* FirebaseCore in Frameworks */,
 				4212C7972D355B0800072660 /* FirebaseAuth in Frameworks */,
@@ -113,7 +113,7 @@
 			isa = PBXGroup;
 			children = (
 				4212C6822D23F82300072660 /* ArpalusSample */,
-				4212C7242D30075F00072660 /* ARPalusSDK */,
+				4212C7242D30075F00072660 /* ArpalusSDK */,
 				4212C7A02D355B2000072660 /* Frameworks */,
 				4212C6812D23F82300072660 /* Products */,
 			);
@@ -123,7 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				4212C6802D23F82300072660 /* ArpalusSample.app */,
-				4212C7232D30075F00072660 /* ARPalusSDK.framework */,
+				4212C7232D30075F00072660 /* ArpalusSDK.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -175,9 +175,9 @@
 			productReference = 4212C6802D23F82300072660 /* ArpalusSample.app */;
 			productType = "com.apple.product-type.application";
 		};
-		4212C7222D30075F00072660 /* ARPalusSDK */ = {
+		4212C7222D30075F00072660 /* ArpalusSDK */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4212C72B2D30075F00072660 /* Build configuration list for PBXNativeTarget "ARPalusSDK" */;
+			buildConfigurationList = 4212C72B2D30075F00072660 /* Build configuration list for PBXNativeTarget "ArpalusSDK" */;
 			buildPhases = (
 				4212C71E2D30075F00072660 /* Headers */,
 				4212C71F2D30075F00072660 /* Sources */,
@@ -189,9 +189,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4212C7242D30075F00072660 /* ARPalusSDK */,
+				4212C7242D30075F00072660 /* ArpalusSDK */,
 			);
-			name = ARPalusSDK;
+			name = ArpalusSDK;
 			packageProductDependencies = (
 				4212C79C2D355B0800072660 /* FirebaseFirestore */,
 				4212C79E2D355B0800072660 /* FirebaseStorage */,
@@ -199,7 +199,7 @@
 				4212C7A72D35646700072660 /* FirebaseAuth */,
 			);
 			productName = ARPalusSDK;
-			productReference = 4212C7232D30075F00072660 /* ARPalusSDK.framework */;
+			productReference = 4212C7232D30075F00072660 /* ArpalusSDK.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -239,7 +239,7 @@
 			projectRoot = "";
 			targets = (
 				4212C67F2D23F82300072660 /* ArpalusSample */,
-				4212C7222D30075F00072660 /* ARPalusSDK */,
+				4212C7222D30075F00072660 /* ArpalusSDK */,
 			);
 		};
 /* End PBXProject section */
@@ -281,7 +281,7 @@
 /* Begin PBXTargetDependency section */
 		4212C7282D30075F00072660 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4212C7222D30075F00072660 /* ARPalusSDK */;
+			target = 4212C7222D30075F00072660 /* ArpalusSDK */;
 			targetProxy = 4212C7272D30075F00072660 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -584,7 +584,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4212C72B2D30075F00072660 /* Build configuration list for PBXNativeTarget "ARPalusSDK" */ = {
+		4212C72B2D30075F00072660 /* Build configuration list for PBXNativeTarget "ArpalusSDK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4212C72C2D30075F00072660 /* Debug */,

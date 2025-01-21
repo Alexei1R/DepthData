@@ -1,7 +1,7 @@
 import Foundation
 import FirebaseFirestore
 
-public enum ArpalusSDK {
+public enum Arpalus {
     public static func start(email: String, password: String , completion: @escaping () -> Void) {
         Task { @MainActor in
             do {

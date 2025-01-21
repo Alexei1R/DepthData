@@ -3,7 +3,7 @@ import UIKit
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
-import ARPalusSDK
+import ArpalusSDK
 
 final class UserStore {
     func signIn(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
