@@ -10,13 +10,16 @@ import FirebaseFirestore
 import FirebaseStorage
 import ARKit
 
-final class ImageService {
+final class ImageService: ObservableObject {
 
+    @Published var isScanning: Bool = false
     private var localStorage: LocalStorage
     private let storage = FirebaseStorage.Storage.sdk
     private let db = Firestore.sdk
     private var path: String? = nil
-    private var isScanning: Bool = false
+    private var customMetadata: [String: String] = [:]
+    private var frameCount: Int = 0
+    private var currentTimeStamp: String = ""
 
     init(localStorage: LocalStorage) {
         self.localStorage = localStorage
@@ -47,32 +50,45 @@ final class ImageService {
         "\(currentDate)_\(currentTime)_\(miliUUIDPart)"
     }
 
-    func saveImage(_ image: UIImage, arFrame: ARFrame, metadata: ImageMetadata) {
-        isScanning = true
+    func setupUploanding() {
         guard let userSettings = localStorage.userSettings else { isScanning = false; return }
-
-        guard let imageData = image.jpegData(compressionQuality: 0.75) else { return }
-        let metadata = encodeMetadata(metadata) ?? Data()
         if path == nil {
             //Sessions/Arpalus/NetanyaOffice/netanyaoffice3dev/2025-01-16/2025-01-16_14-03-24/2025-01-16_14-07-48_507d2731e4e8/Images
             path = "Sessions/\(userSettings.client)/\(userSettings.project)/\(userSettings.deployment.lowercased())\(userSettings.settings)/\(currentDate)/\(currentDate)_\(currentTime)/\(timestamp)/Images/"
         }
-        guard let path else { isScanning = false; return }
-        let currentTimeStamp = timestamp
-        let jpgFileName = "\(currentTimeStamp)_number.jpg"
-        let metadataFilename = "\(currentTimeStamp)_number.txt"
+        customMetadata = ["client": userSettings.client]
+        currentTimeStamp = timestamp
+        isScanning = true
+    }
 
+    func stopUploading() {
+        isScanning = false
+        path = nil
+        customMetadata = [:]
+        currentTimeStamp = ""
+    }
+
+    func saveImage(_ image: UIImage, arFrame: ARFrame, metadata: ImageMetadata) {
+
+        guard let imageData = image.jpegData(compressionQuality: 0.75) else { return }
+        let metadata = encodeMetadata(metadata) ?? Data()
+        guard let path else { isScanning = false; return }
+
+        let jpgFileName = "\(currentTimeStamp)_\(frameCount).jpg"
+        let metadataFilename = "\(currentTimeStamp)_\(frameCount).txt"
+        frameCount += 1
         let imageRef = storage.reference().child(path + jpgFileName)
         let imageMetadata = StorageMetadata()
         imageMetadata.contentType = "image/jpeg"
-        imageMetadata.customMetadata = ["client": userSettings.client]
+        imageMetadata.customMetadata = customMetadata
+
         let metadataMetadata = StorageMetadata()
         metadataMetadata.contentType = "text/plain"
-        metadataMetadata.customMetadata = ["client": userSettings.client]
+        metadataMetadata.customMetadata = customMetadata
         let metadataRef = storage.reference().child(path + metadataFilename)
         Task {
             do {
-                _ = try await imageRef.putDataAsync(imageData, metadata: imageMetadata)
+                _ = try await imageRef.putDataAsync(imageData,metadata: imageMetadata)
                 _ = try await metadataRef.putDataAsync(metadata, metadata: metadataMetadata)
                 self.path =  nil
             } catch {
