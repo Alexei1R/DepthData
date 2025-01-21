@@ -42,7 +42,10 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         // Create a session configuration for world tracking
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity
-        configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
+        let frameSemantics: ARConfiguration.FrameSemantics = [.sceneDepth, .smoothedSceneDepth]
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(frameSemantics) {
+            configuration.frameSemantics = frameSemantics
+        }
         let bestFormat = CameraConfig.bestCameraConfig(
             settings: settings.camera!,
             formats: ARWorldTrackingConfiguration.supportedVideoFormats
