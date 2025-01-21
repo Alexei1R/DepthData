@@ -7,11 +7,11 @@
 
 extension AppSettings {
     struct Vision: Equatable, Codable {
-        let version: Int
-        let systemName: AppSettingName
-        let tags: [String]
+        var version = 0
+        var systemName: AppSettingName = .vision
+        var tags: [String] = []
 
-        let minStartingDistance: Double
+        var minStartingDistance = 0.5
 //        var inferenceJobsEnabled: Bool = false
 //        let postSpecificDetections: Bool
 //        let anchorDistance: Double
@@ -98,8 +98,8 @@ extension AppSettings {
 //        let maxLoadedModels: Int
 //        let posterTracking: Bool
 //        let minDetectionAngle: Int
-        let minDetectionDistance: Double
-        let maxDetectionDistance: Double
+        var minDetectionDistance = 0.0
+        var maxDetectionDistance = 2.0
 //        let acceptFrontalSideDetections: Bool
 //        let maxProcessingDistanceX: Double
 //        let quadPosOffsetZ: Double
@@ -177,18 +177,5 @@ extension AppSettings.Vision {
         let angleXSlices: Int
         let angleYRange: Double
         let angleYSlices: Int
-    }
-}
-
-extension AppSettings.Vision {
-    init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        version = try container.decode(Int.self, forKey: .version)
-        systemName = try container.decode(AppSettingName.self, forKey: .systemName)
-        tags = try container.decode([String].self, forKey: .tags)
-
-        minStartingDistance = try container.decodeIfPresent(Double.self, forKey: .minStartingDistance) ?? 0.5
-        minDetectionDistance = try container.decodeIfPresent(Double.self, forKey: .minDetectionDistance) ?? 0
-        maxDetectionDistance = try container.decodeIfPresent(Double.self, forKey: .maxDetectionDistance) ?? 2
     }
 }

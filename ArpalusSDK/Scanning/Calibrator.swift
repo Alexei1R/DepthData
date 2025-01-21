@@ -103,3 +103,23 @@ extension UnsafeMutablePointer {
         return self[centerIndex]
     }
 }
+
+func customDecode<T: Codable>(data: Data, defaultValue: T) throws -> T {
+    let defaultData = try JSONEncoder().encode(defaultValue)
+    let defaultDict = try JSONSerialization.jsonObject(with: defaultData, options: []) as? [String: Any]
+
+    let currentDict = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+    guard let currentDict else { return defaultValue }
+
+    let mergedDict = defaultDict?.merging(currentDict) { old, new in
+        // Go 1-layer deep for nested models. Won't work if the nesting goes 2-layers
+        if let oldNestedDict = old as? [String: Any], let newNestedDict = new as? [String: Any] {
+            return oldNestedDict.merging(newNestedDict) { _, new in new }
+        } else {
+            return new
+        }
+    } ?? currentDict
+    let mergedData = try JSONSerialization.data(withJSONObject: mergedDict)
+
+    return try JSONDecoder().decode(T.self, from: mergedData)
+}

@@ -10,7 +10,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
     var origin: simd_float4x4?
 
     var settings = SDKEnvironment.shared.localStorage.appSettings!
-    lazy var calibrator = Calibrator(camera: settings.camera!, vision: settings.vision!)
+    lazy var calibrator = Calibrator(camera: settings.camera, vision: settings.vision)
     var overlayViewModel: OverlayViewModel!
 
     private var placedPositions: Set<SIMD2<Float>> = []
@@ -47,7 +47,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
             configuration.frameSemantics = frameSemantics
         }
         let bestFormat = CameraConfig.bestCameraConfig(
-            settings: settings.camera!,
+            settings: settings.camera,
             formats: ARWorldTrackingConfiguration.supportedVideoFormats
         )
         bestFormat.map { configuration.videoFormat = $0 }
@@ -127,17 +127,17 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
         print("Pitch: \(Int(pitchDegrees)); Yaw: \(Int(yawDegrees)); Roll: \(Int(rollDegrees))")
 
-        if Double(pitchDegrees) > settings.camera!.captureAnglePitch {
+        if Double(pitchDegrees) > settings.camera.captureAnglePitch {
             overlayViewModel.text = "Pitch to shelf"
             return false
         }
 
-        if Double(yawDegrees) > settings.camera!.captureAngleYaw {
+        if Double(yawDegrees) > settings.camera.captureAngleYaw {
             overlayViewModel.text = "Yaw to shelf"
             return false
         }
 
-        if Double(rollDegrees) > settings.camera!.captureAngleRoll {
+        if Double(rollDegrees) > settings.camera.captureAngleRoll {
             overlayViewModel.text = "Roll to shelf"
             return false
         }
@@ -146,12 +146,12 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
     }
 
     private func isValidDistance(_ distance: Double) -> Bool {
-        let isTooClose = distance < settings.vision!.minDetectionDistance || distance < settings.vision!.minStartingDistance
-        if isTooClose && settings.camera!.tooCloseToShelfWarning {
+        let isTooClose = distance < settings.vision.minDetectionDistance || distance < settings.vision.minStartingDistance
+        if isTooClose && settings.camera.tooCloseToShelfWarning {
             overlayViewModel.text = "Too Close to Shelf"
             return false
         }
-        if settings.camera!.tooFarToShelfWarning && distance > settings.vision!.maxDetectionDistance {
+        if settings.camera.tooFarToShelfWarning && distance > settings.vision.maxDetectionDistance {
             overlayViewModel.text = "Too Far to Shelf"
             return false
         }
@@ -215,8 +215,8 @@ extension ScanningViewController: ARSessionDelegate {
         }
         
         // Find bounds of the projected quadrilateral
-        let gridSpacingX = Float(settings.camera!.shelfCoverageCellsSize) * OVERLAP_VALUE
-        let gridSpacingY = Float(settings.camera!.shelfCoverageCellsSize) * OVERLAP_VALUE
+        let gridSpacingX = Float(settings.camera.shelfCoverageCellsSize) * OVERLAP_VALUE
+        let gridSpacingY = Float(settings.camera.shelfCoverageCellsSize) * OVERLAP_VALUE
 
         let minX = cornersPlane.map(\.x).min()! - gridSpacingX
         let maxX = cornersPlane.map(\.x).max()! + gridSpacingX
@@ -262,7 +262,7 @@ extension ScanningViewController: ARSessionDelegate {
         let newCells = findNewCells(gridPositionsToCheck, origin: origin, forward: forward, cameraPos: cameraPos, fov: fov, right: right, up: up)
 
         // Upload image if needed
-        if Double(newCells.count) > Double(gridPositionsToCheck.count) * settings.camera!.shelfCoverageMinRatio {
+        if Double(newCells.count) > Double(gridPositionsToCheck.count) * settings.camera.shelfCoverageMinRatio {
             sendUploadImageEvent(frame: frame)
 
             newCells.forEach { (gridPosition, transform) in
@@ -323,17 +323,17 @@ extension ScanningViewController: ARSessionDelegate {
         CVPixelBufferLockBaseAddress(buffer, .readOnly)
         defer { CVPixelBufferUnlockBaseAddress(buffer, .readOnly) }
         let image = CIImage(cvPixelBuffer: buffer).transformed(by: .init(rotationAngle: -.pi/2))
-        guard settings.camera!.lowerSaveResolution, Int(buffer.size.width) != settings.camera!.saveResolutionWidth else {
+        guard settings.camera.lowerSaveResolution, Int(buffer.size.width) != settings.camera.saveResolutionWidth else {
             return UIImage(ciImage: image)
         }
-        let scale = CGFloat(settings.camera!.saveResolutionWidth) / buffer.size.width
+        let scale = CGFloat(settings.camera.saveResolutionWidth) / buffer.size.width
         return UIImage(ciImage: image.transformed(by: .init(scaleX: scale, y: scale)))
     }
 
     private func createPlaneNode(color: UIColor) -> SCNNode {
         let planeGeometry = SCNPlane(
-            width: CGFloat(settings.camera!.shelfCoverageCellsSize),
-            height: CGFloat(settings.camera!.shelfCoverageCellsSize)
+            width: CGFloat(settings.camera.shelfCoverageCellsSize),
+            height: CGFloat(settings.camera.shelfCoverageCellsSize)
         )
         let planeMaterial = SCNMaterial()
         planeMaterial.diffuse.contents = color

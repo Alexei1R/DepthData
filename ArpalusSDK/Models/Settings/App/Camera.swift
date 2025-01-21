@@ -7,26 +7,26 @@
 
 extension AppSettings {
     struct Camera: Equatable, Codable {
-        let version: Int
-        let systemName: AppSettingName
-        let tags: [String]
-        let captureAnglePitch: Double
-        let captureAngleYaw: Double
-        let captureAngleRoll: Double
+        var version = 0
+        var systemName: AppSettingName = .camera
+        var tags: [String] = []
+        var captureAnglePitch: Double = 35
+        var captureAngleYaw: Double = 35
+        var captureAngleRoll: Double = 20
 //        let imageSaveMode: Int
 //        let newDetectionSaveImageThreshold: Int
 //        let minNumofImagesToUpload: Int
 //        let useXSortingForDashboardImages: Bool
 //        let shelfCoverageCellsSize: Double
-        let shelfCoverageCellsSize: Double
-        let shelfCoverageMinRatio: Double
+        var shelfCoverageCellsSize = 0.25
+        var shelfCoverageMinRatio = 0.25
 //        let edgeShelfCoverageMinRatio: Double
 //        let shelfCoverageLog: Bool
 //        let cropDashboardImages: Bool
-        let lowerSaveResolution: Bool
-        let saveResolutionWidth: Int
-        let preferredCameraConfigWidth: Int
-        let targetCameraAspectRatio: Double
+        var lowerSaveResolution = true
+        var saveResolutionWidth = 720
+        var preferredCameraConfigWidth = 720
+        var targetCameraAspectRatio = 4.0 / 3
 //        let cameraCaptuerFrameCount: Int
 //        let maxCameraFrameCaptureToUpload: Int
 //        let finishScanOnMaxImageLimit: Bool
@@ -49,9 +49,9 @@ extension AppSettings {
 //        let zoomCropFractions: [Double]
 //        let processSquareCrops: Bool
 //        let delayBetweenInstructions: Double
-        let angleTooSteepWarning: Bool
-        let tooCloseToShelfWarning: Bool
-        let tooFarToShelfWarning: Bool
+        var angleTooSteepWarning = true
+        var tooCloseToShelfWarning = true
+        var tooFarToShelfWarning = true
 //        let motionSpeedWarning: Bool
 //        let maxMotionAccelerationSpeed: Double
 //        let maxMotionAngularAccelerationSpeed: Double
@@ -63,30 +63,5 @@ extension AppSettings {
 //        let minCapturePerSecond: Int
 //        let captureAngleMaxZ: Double
 //        let uploadRealogramImageToDashboard: Int
-    }
-}
-
-extension AppSettings.Camera {
-    init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        version = try container.decode(Int.self, forKey: .version)
-        systemName = try container.decode(AppSettingName.self, forKey: .systemName)
-        tags = try container.decode([String].self, forKey: .tags)
-
-        shelfCoverageCellsSize = try container.decodeIfPresent(Double.self, forKey: .shelfCoverageCellsSize) ?? 0.25
-        shelfCoverageMinRatio = try container.decodeIfPresent(Double.self, forKey: .shelfCoverageMinRatio) ?? 0.25
-
-        lowerSaveResolution = try container.decodeIfPresent(Bool.self, forKey: .lowerSaveResolution) ?? true
-        saveResolutionWidth = try container.decodeIfPresent(Int.self, forKey: .saveResolutionWidth) ?? 720
-        preferredCameraConfigWidth = try container.decodeIfPresent(Int.self, forKey: .preferredCameraConfigWidth) ?? 720
-        targetCameraAspectRatio = try container.decodeIfPresent(Double.self, forKey: .targetCameraAspectRatio) ?? 4.0 / 3
-
-        captureAnglePitch = try container.decodeIfPresent(Double.self, forKey: .captureAnglePitch) ?? 35
-        captureAngleYaw = try container.decodeIfPresent(Double.self, forKey: .captureAngleYaw) ?? 35
-        captureAngleRoll = try container.decodeIfPresent(Double.self, forKey: .captureAngleRoll) ?? 20
-
-        angleTooSteepWarning = try container.decodeIfPresent(Bool.self, forKey: .angleTooSteepWarning) ?? true
-        tooCloseToShelfWarning = try container.decodeIfPresent(Bool.self, forKey: .tooCloseToShelfWarning) ?? true
-        tooFarToShelfWarning = try container.decodeIfPresent(Bool.self, forKey: .tooFarToShelfWarning) ?? true
     }
 }

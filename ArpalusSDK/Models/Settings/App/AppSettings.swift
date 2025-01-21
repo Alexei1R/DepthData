@@ -6,10 +6,10 @@
 //
 
 struct AppSettings: Equatable, Codable {
-    let debug: Debug?
-    let camera: Camera?
-    let vision: Vision?
-    let planogram: Planogram?
+    let debug: Debug
+    let camera: Camera
+    let vision: Vision
+    let planogram: Planogram
 }
 
 extension AppSettings {
@@ -27,13 +27,12 @@ extension AppSettings {
             }
             
         }
-        let decoder = JSONDecoder()
-        var (debug, camera, vision, planogram): (Debug?, Camera?, Vision?, Planogram?)
+        var (debug, camera, vision, planogram) = (Debug(), Camera(), Vision(), Planogram())
         for setting in settings {
             switch setting.appSetting.systemName {
             case .debug:
                 do {
-                    debug = try decoder.decode(Debug.self, from: setting.rawData)
+                    debug = try customDecode(data: setting.rawData, defaultValue: debug)
                 } catch {
                     print(error)
                     throw error
@@ -41,21 +40,21 @@ extension AppSettings {
 
             case .camera:
                 do {
-                    camera = try decoder.decode(Camera.self, from: setting.rawData)
+                    camera = try customDecode(data: setting.rawData, defaultValue: camera)
                 } catch {
                     print(error)
                     throw error
                 }
             case .vision:
                 do {
-                    vision = try decoder.decode(Vision.self, from: setting.rawData)
+                    vision = try customDecode(data: setting.rawData, defaultValue: vision)
                 } catch {
                     print(error)
                     throw error
                 }
             case .planogram:
                 do {
-                    planogram = try decoder.decode(Planogram.self, from: setting.rawData)
+                    planogram = try customDecode(data: setting.rawData, defaultValue: planogram)
                 } catch {
                     print(error)
                     throw error
@@ -67,13 +66,13 @@ extension AppSettings {
 
     func encode(to encoder: any Encoder) throws {
         let jsonEncoder = JSONEncoder()
-        let debug = try debug.map { try jsonEncoder.encode($0) }
-        let vision = try vision.map { try jsonEncoder.encode($0) }
-        let camera = try camera.map { try jsonEncoder.encode($0) }
-        let planogram = try planogram.map { try jsonEncoder.encode($0) }
+        let debug = try jsonEncoder.encode(debug)
+        let vision = try jsonEncoder.encode(vision)
+        let camera = try jsonEncoder.encode(camera)
+        let planogram = try jsonEncoder.encode(planogram)
 
         let settings = [debug, vision, camera, planogram]
-            .compactMap { $0.flatMap { String(data: $0, encoding: .utf8) } }
+            .compactMap { String(data: $0, encoding: .utf8) }
 
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(settings, forKey: .settingsData)

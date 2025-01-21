@@ -7,9 +7,9 @@
 
 extension AppSettings {
     struct Debug: Equatable, Codable {
-        let version: Int
-        let systemName: AppSettingName
-        let tags: [String]
+        var version: Int = 0
+        var systemName: AppSettingName = .debug
+        var tags: [String] = []
 //        let backgroundUploadEnabled: Bool
 //        let storageUrl: String
 //        let showDisconnectedIcon: Bool
@@ -36,7 +36,7 @@ extension AppSettings {
 //        let displayLodDepthMap: Bool
 //        let showDepthMapFeaturePoints: Bool
 //        let showDepthCellOnRayHit: Bool
-        let debugPlaneOrigin: Bool
+        var debugPlaneOrigin = true
 //        let debugCameraDistance: Bool
 //        let debugAnchors: Bool
 //        let showAllDetectedBBs: Bool
@@ -55,16 +55,5 @@ extension AppSettings {
 //        let minWarningInterval: Double
 //        let duplicateScan: Int
 //        let maxThumbnailsFileSizeMb: Int
-    }
-}
-
-extension AppSettings.Debug {
-    init(from decoder: any Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        version = try container.decode(Int.self, forKey: .version)
-        systemName = try container.decode(AppSettingName.self, forKey: .systemName)
-        tags = try container.decode([String].self, forKey: .tags)
-
-        debugPlaneOrigin = try container.decodeIfPresent(Bool.self, forKey: .debugPlaneOrigin) ?? true
     }
 }

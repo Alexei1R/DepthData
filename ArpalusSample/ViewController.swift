@@ -49,11 +49,23 @@ class ViewController: UIHostingController<LoginPage> {
     }
 
     func proceed(email: String, password: String) {
-        Arpalus.start(email: email, password: password) {
-            self.navigationController?.pushViewController(
-                ScanningViewController(),
-                animated: true
-            )
+        Arpalus.start(email: email, password: password) { result in
+            switch result {
+            case .success(let status):
+                switch status {
+                case .loading(let progress):
+                    break
+                case .initialized:
+                    self.navigationController?.pushViewController(
+                        ScanningViewController(),
+                        animated: true
+                    )
+                @unknown default:
+                    break
+                }
+            case .failure(let error):
+                print("ERROR: \(error)")
+            }
         }
     }
 }

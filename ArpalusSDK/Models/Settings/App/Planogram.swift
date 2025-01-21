@@ -7,9 +7,9 @@
 
 extension AppSettings {
     struct Planogram: Equatable, Codable {
-        let version: Int
-        let systemName: AppSettingName
-        let tags: [String]
+        var version = 0
+        var systemName: AppSettingName = .planogram
+        var tags: [String] = []
 //        let measurementUnit: Int
 //        let scanProgress: Int
 //        let scanProgressCountGeneral: Bool
