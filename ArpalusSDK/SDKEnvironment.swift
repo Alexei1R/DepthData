@@ -10,22 +10,15 @@ public enum Arpalus {
         Task { @MainActor in
             do {
                 let result = try await SDKEnvironment.shared.authentication.authenticate(email: email, password: password)
-                print(result)
                 completion(.success(.loading(0.16)))
-                let userSettings = try await SDKEnvironment.shared.settingsStore.getUserSettings()
-                print("User settings: ", userSettings)
-                completion(.success(.loading(0.33)))
-                let previousClientSettingsVersion = SDKEnvironment.shared.localStorage.clientSettings?.version
-                completion(.success(.loading(0.5)))
-                let clientSettings = try await SDKEnvironment.shared.settingsStore.getClientSettings()
-                print("Client settings: ", clientSettings)
-//                if previousClientSettingsVersion != clientSettings.version {
-                    try await SDKEnvironment.shared.settingsStore.downloadAppSettings()
-//                }
-                completion(.success(.loading(0.66)))
+                try await SDKEnvironment.shared.settingsStore.getUserSettings()
+                print("User settings: ", SDKEnvironment.shared.localStorage.userSettings)
+                completion(.success(.loading(0.54)))
+                try await SDKEnvironment.shared.settingsStore.getClientSettings()
+                print("Client settings: ", SDKEnvironment.shared.localStorage.clientSettings)
+                completion(.success(.loading(0.75)))
                 try await SDKEnvironment.shared.settingsStore.getDeployments()
-                completion(.success(.loading(0.83)))
-                try await SDKEnvironment.shared.settingsStore.downloadProjects()
+                print("Deployment settings: ", SDKEnvironment.shared.localStorage.deploymentSettings)
                 completion(.success(.initialized))
             } catch {
                 print("Error in starting sdk: ", error.localizedDescription)

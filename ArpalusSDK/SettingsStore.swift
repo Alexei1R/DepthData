@@ -24,14 +24,12 @@ final class SettingsStore {
         self.localStorage = localStorage
     }
 
-    func getUserSettings() async throws -> UserSettings {
+    func getUserSettings() async throws  {
         let userSettings = try await db.collection("Users").document("\(email)").getDocument(as: UserSettings.self)
         localStorage.userSettings = userSettings
-//        print(userSettings)
-        return userSettings
     }
 
-    func getClientSettings() async throws -> ClientSettings {
+    func getClientSettings() async throws {
         guard let userSettings = localStorage.userSettings else { throw SDKError.missingUserSettings }
         let settings = try await db.collection("Settings")
             .document("\(userSettings.client)_\(userSettings.settings)")
@@ -39,9 +37,8 @@ final class SettingsStore {
 
         if localStorage.clientSettings?.version != settings.version {
             localStorage.clientSettings = settings
+            try await downloadAppSettings()
         }
-
-        return settings
     }
 
     func downloadAppSettings() async throws {
@@ -63,6 +60,7 @@ final class SettingsStore {
         let deployment = try await db.collection("Deployments").document("\(userSettings.client)_\(userSettings.project)_\(userSettings.deployment)").getDocument(as: Deployment.self)
         if localStorage.deploymentSettings?.projectVersion != deployment.projectVersion {
             localStorage.deploymentSettings = deployment
+            try await downloadProjects()
         }
     }
 
