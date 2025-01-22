@@ -38,10 +38,10 @@ final class Calibrator {
     func calibrateOrigin(frame: ARFrame) -> Result {
         let eulerAngles = frame.camera.eulerAngles
 
-        print("Pitch: \(cameraPitch(eulerAngles)); Roll: \(cameraRoll(eulerAngles))")
+        print("Pitch: \(eulerAngles.cameraPitch); Roll: \(eulerAngles.cameraRoll)")
 
-        let isPitchValid = abs(cameraPitch(eulerAngles)) <= camera.captureAnglePitch
-        let isRollValid = abs(cameraRoll(eulerAngles)) <= camera.captureAngleRoll
+        let isPitchValid = abs(eulerAngles.cameraPitch) <= camera.captureAnglePitch
+        let isRollValid = abs(eulerAngles.cameraRoll) <= camera.captureAngleRoll
 
         guard isPitchValid else {
             stableFrameCount = 0
@@ -75,25 +75,41 @@ final class Calibrator {
         stableFrameCount = 0
     }
 
-    private func cameraPitch(_ eulerAngles: simd_float3) -> Degrees {
-        let pitch = eulerAngles.x > .pi / 2 ? eulerAngles.x - .pi : eulerAngles.x
-        return Degrees(abs(pitch * 180 / .pi))
-    }
-
-    private func cameraRoll(_ eulerAngles: simd_float3) -> Degrees {
-        let normalizedRoll = eulerAngles.z + .pi / 2
-        let adjustedRoll = normalizedRoll > .pi ? normalizedRoll - 2 * .pi : normalizedRoll
-        let roll = adjustedRoll > .pi / 2 ? adjustedRoll - .pi : adjustedRoll
-        return Degrees(abs(roll * 180 / .pi))
-    }
-
     private func computeOriginPoint(frame: ARFrame) -> simd_float4x4? {
         guard let originPosition = originCalculator.compute(frame) else { return nil }
-        // Get the camera transform
-        var newOrigin = frame.camera.transform
-        newOrigin.columns.3 = simd_float4(originPosition, 1)
+        
+        // Get the camera's forward direction and project it onto XZ plane
+        let cameraTransform = frame.camera.transform
+        let cameraForward = cameraTransform.columns.2.xyz
+        
+        // Calculate right vector by crossing world up with forward
+        let up = simd_float3(0, 1, 0)
+        let right = -simd_normalize(simd_cross(up, cameraForward))
+        
+        let forward = simd_normalize(simd_cross(up, right))
+        
+        // Construct the new transform matrix
+        return simd_float4x4(
+            columns: (
+                simd_float4(right, 0),
+                simd_float4(up, 0),
+                simd_float4(forward, 0),
+                simd_float4(originPosition, 1)
+            )
+        )
+    }
+}
 
-        return newOrigin
+extension simd_float3 {
+    var cameraPitch: Degrees {
+        let pitch = x > .pi / 2 ? x - .pi : x
+        return Degrees(abs(pitch * 180 / .pi))
+    }
+    
+    var cameraRoll: Degrees {
+        let adjustedRoll = z > .pi ? z - 2 * .pi : z
+        let roll = adjustedRoll > .pi / 2 ? adjustedRoll - .pi : adjustedRoll
+        return Degrees(abs(roll * 180 / .pi))
     }
 }
 

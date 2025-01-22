@@ -45,6 +45,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         sceneView.session.delegate = self
 
         let configuration = ARWorldTrackingConfiguration()
+        
         configuration.worldAlignment = .gravity
         configuration.isLightEstimationEnabled = true
         
@@ -57,6 +58,8 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
             formats: ARWorldTrackingConfiguration.supportedVideoFormats
         )
         bestFormat.map { configuration.videoFormat = $0 }
+        sceneView.debugOptions = [.renderAsWireframe, SCNDebugOptions(rawValue: 2048)]
+
 
         sceneView.session.run(configuration)
     }
@@ -90,6 +93,7 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
 
         let node = SCNNode(geometry: sphere)
         node.simdTransform = transform
+        
 
         sceneView.scene.rootNode.addChildNode(node)
     }
@@ -127,11 +131,12 @@ public class ScanningViewController: UIViewController, ARSCNViewDelegate {
         let eulerAngles = relativeTransform.eulerAngles
 
         // Convert to degrees
-        let pitchDegrees = abs(eulerAngles.x * 180 / .pi)
+        let pitchDegrees = eulerAngles.cameraPitch
         let yawDegrees = abs(eulerAngles.y * 180 / .pi)
-        let rollDegrees = abs(eulerAngles.z * 180 / .pi)
+        let rollDegrees = eulerAngles.cameraRoll
 
-        print("Pitch: \(Int(pitchDegrees)); Yaw: \(Int(yawDegrees)); Roll: \(Int(rollDegrees))")
+//        print("Pitch: \(Int(pitchDegrees)); Yaw: \(Int(yawDegrees)); Roll: \(Int(rollDegrees))")
+    
 
         if Double(pitchDegrees) > settings.camera.captureAnglePitch {
             overlayViewModel.text = "Pitch to shelf"
@@ -510,11 +515,11 @@ extension simd_float4 {
 }
 
 extension simd_float4x4 {
-    var eulerAngles: (x: Float, y: Float, z: Float) {
+    var eulerAngles: simd_float3 {
         // X-Y-Z rotation order (pitch-yaw-roll)
         let x = asin(columns.0.z)
         let y = atan2(-columns.1.z, columns.2.z)
         let z = atan2(-columns.0.y, columns.0.x)
-        return (x, y, z)
+        return simd_float3(x, y, z)
     }
 }
