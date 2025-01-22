@@ -9,6 +9,7 @@ public enum Arpalus {
     public static func start(email: String, password: String , completion: @escaping (Result<Status, Error>) -> Void) {
         Task { @MainActor in
             do {
+                completion(.success(.loading(0.01)))
                 let result = try await SDKEnvironment.shared.authentication.authenticate(email: email, password: password)
                 completion(.success(.loading(0.16)))
                 try await SDKEnvironment.shared.settingsStore.getUserSettings()

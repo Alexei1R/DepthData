@@ -31,134 +31,186 @@ final class UserStore {
     }
 }
 
-struct LoginPage: View {
+class LoginViewModel: ObservableObject {
     enum Mode {
         case signIn
         case signUp
     }
 
-    @State var email: String = ""
-    @State var password: String = ""
-    @State var mode: Mode = .signIn
+    @Published var email: String = "victor@thenoughtyfox.com"
+    @Published var password: String = "123456"
+    @Published var mode: Mode = .signIn
+    @Published var progress: Double = 0
+    @Published var isLoading: Bool = false
+}
+
+struct LoginPage: View {
+    @ObservedObject var viewModel: LoginViewModel
     @State private var isSecure: Bool = true
 
     var onSignIn: (String, String) -> Void
 
     var body: some View {
-        VStack() {
-            Spacer()
-            Image(.arpalusFullLogo)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 200)
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Email")
-                    .padding(.top, 50)
-                TextField("Email", text: $email)
-                    .keyboardType(.emailAddress)
-                    .frame(height: 50)
-                    .padding(.leading)
-                    .background(
-                        Capsule()
-                            .stroke(style: StrokeStyle(lineWidth: 2))
-                            .foregroundStyle(Color(.lightGray))
-                    )
-                Text("Password")
-                ZStack {
-                    if isSecure {
-                        SecureField("******", text: $password)
-                            .frame(height: 50)
-                            .padding(.leading)
-                            .background(
-                                Capsule()
-                                    .stroke(style: StrokeStyle(lineWidth: 2))
-                                    .foregroundStyle(Color(.lightGray))
-                            )
-                    } else {
-                        TextField("******", text: $password)
-                            .frame(height: 50)
-                            .padding(.leading)
-                            .background(
-                                Capsule()
-                                    .stroke(style: StrokeStyle(lineWidth: 2))
-                                    .foregroundStyle(Color(.lightGray))
-                            )
-                    }
-                    HStack {
+        ZStack {
+            if !viewModel.isLoading {
+                VStack() {
+                    createLogo()
+                    VStack(alignment: .leading, spacing: 16) {
+                        createTextFields()
+                        createFrogotPassword()
+                        createSignInButton()
                         Spacer()
-                        Image(systemName: isSecure ? "eye" : "eye.slash")
-                            .foregroundStyle(Color(.lightGray))
-                            .onTapGesture {
-                                isSecure.toggle()
-                            }
-                            .padding(.trailing)
                     }
-                }
-                .animation(.easeInOut, value: isSecure)
-                HStack {
-                    Spacer()
-                    Button {
-                        // Firebase reset password request
-                    }
-                    label: {
-                        Text("Forgot Password ?")
-                            .foregroundStyle(.blue)
-                    }
-
-                }
-                Button(action: {
-                    switch mode {
-                    case .signIn:
-                        UserStore().signIn(email: email, password: password) { result in
-                            switch result {
-                            case .success:
-                                print("Sign in successful")
-                                onSignIn(email, password)
-                            case .failure(let error):
-                                print("Sign in failed: \(error)")
-                            }
-                        }
-                    case .signUp:
-                        UserStore().signUp(email: email, password: password) { result in
-                            switch result {
-                            case .success:
-                                print("Sign up successful")
-                                onSignIn(email, password)
-                            case .failure(let error):
-                                print("Sign up failed: \(error)")
-                            }
-                        }
-                    }
-                }) {
-                    HStack {
-                        if mode == .signIn {
-                            Text("Sign In")
-                        } else {
-                            Text("Sign Up")
-                        }
-                    }
-                    .padding(.vertical)
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 24)
                     .frame(maxWidth: .infinity)
-                    .foregroundStyle(.white)
-                    .bold()
                     .background(
-                        Capsule()
-                            .foregroundStyle(.blue)
+                        Color.white
+                            .clipShape(UnevenRoundedRectangle(cornerRadii: .init(topLeading: 20, topTrailing: 20)))
+                            .ignoresSafeArea()
                     )
-                }
-                Spacer()
-            }
-            .foregroundStyle(.black)
-            .padding(.horizontal, 24)
-            .background(
-                Color.white
-                    .clipShape(UnevenRoundedRectangle(cornerRadii: .init(topLeading: 20, topTrailing: 20)))
-                    .ignoresSafeArea()
-            )
 
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    Image(.background)
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
+                )
+            } else {
+                ProgressView(progress: $viewModel.progress)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.blue.opacity(0.2))
     }
 }
 
+private extension LoginPage {
+
+    func createLogo() -> some View {
+        Image(.arpalusFullLogo)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 150, height: 41)
+            .padding(.top, 82)
+            .padding(.bottom, 41)
+    }
+
+    func createTextFields() -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("User Name")
+                .padding(.top, 30)
+                .padding(.bottom, 5)
+                .bold()
+            TextField("Enter email or username", text: $viewModel.email)
+                .keyboardType(.emailAddress)
+                .frame(height: 40)
+                .padding(.leading)
+                .background(
+                    Capsule()
+                        .stroke(style: StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(Color(.textFieldBorder))
+                )
+            Text("Password")
+                .bold()
+                .padding(.top, 30)
+                .padding(.bottom, 5)
+            ZStack {
+                if isSecure {
+                    SecureField("Enter your password", text: $viewModel.password)
+                        .frame(height: 40)
+                        .padding(.leading)
+                        .background(
+                            Capsule()
+                                .stroke(style: StrokeStyle(lineWidth: 1))
+                                .foregroundStyle(Color(.textFieldBorder))
+                        )
+                } else {
+                    TextField("******", text: $viewModel.password)
+                        .frame(height: 40)
+                        .padding(.leading)
+                        .background(
+                            Capsule()
+                                .stroke(style: StrokeStyle(lineWidth: 1))
+                                .foregroundStyle(Color(.textFieldBorder))
+                        )
+                }
+                HStack {
+                    Spacer()
+                    Image(systemName: isSecure ? "eye" : "eye.slash")
+                        .foregroundStyle(Color(.lightGray))
+                        .onTapGesture {
+                            isSecure.toggle()
+                        }
+                        .padding(.trailing)
+                }
+            }
+            .animation(.easeInOut, value: isSecure)
+        }
+        .font(.system(size: 14))
+    }
+
+    func createSignInButton() -> some View {
+        Button(action: {
+            viewModel.isLoading = true
+            switch viewModel.mode {
+            case .signIn:
+                UserStore().signIn(email: viewModel.email, password: viewModel.password) { result in
+                    switch result {
+                    case .success:
+                        print("Sign in successful")
+                        onSignIn(viewModel.email, viewModel.password)
+                    case .failure(let error):
+                        print("Sign in failed: \(error)")
+                        viewModel.isLoading = false
+                    }
+                }
+            case .signUp:
+                UserStore().signUp(email: viewModel.email, password: viewModel.password) { result in
+                    switch result {
+                    case .success:
+                        print("Sign up successful")
+                        onSignIn(viewModel.email, viewModel.password)
+                    case .failure(let error):
+                        print("Sign up failed: \(error)")
+                        viewModel.isLoading = false
+                    }
+                }
+            }
+        }) {
+            HStack {
+                if viewModel.mode == .signIn {
+                    Text("Sign In")
+                } else {
+                    Text("Sign Up")
+                }
+            }
+            .padding(.vertical)
+            .frame(maxWidth: .infinity)
+            .frame(height: 40)
+            .foregroundStyle(.white)
+            .bold()
+            .background(
+                Capsule()
+                    .foregroundStyle(.blue)
+            )
+        }
+        .font(.system(size: 14))
+    }
+
+    func createFrogotPassword() -> some View {
+        HStack {
+            Spacer()
+            Button {
+                // Firebase reset password request
+            }
+            label: {
+                Text("Forgot Password ?")
+                    .foregroundStyle(.blue)
+                    .font(.system(size: 12))
+
+            }
+
+        }
+    }
+}

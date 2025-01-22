@@ -39,9 +39,12 @@ import ArpalusSDK
 //}
 //
 class ViewController: UIHostingController<LoginPage> {
+
+    let loginViewModel = LoginViewModel()
+
     init() {
-        super.init(rootView: LoginPage(onSignIn: {_,_ in }))
-        rootView = LoginPage(onSignIn: proceed)
+        super.init(rootView: LoginPage(viewModel: loginViewModel, onSignIn: {_,_ in}))
+        rootView = LoginPage(viewModel: loginViewModel, onSignIn: proceed)
     }
 
     @MainActor @preconcurrency required dynamic init?(coder aDecoder: NSCoder) {
@@ -54,8 +57,10 @@ class ViewController: UIHostingController<LoginPage> {
             case .success(let status):
                 switch status {
                 case .loading(let progress):
-                    break
+                    self.loginViewModel.progress = progress
                 case .initialized:
+                    self.loginViewModel.progress = 1
+                    self.loginViewModel.isLoading = false
                     self.navigationController?.pushViewController(
                         ScanningViewController(),
                         animated: true
@@ -64,6 +69,7 @@ class ViewController: UIHostingController<LoginPage> {
                     break
                 }
             case .failure(let error):
+                self.loginViewModel.isLoading = false
                 print("ERROR: \(error)")
             }
         }
